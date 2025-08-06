@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM COM - Générateur de Documents Professionnels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
+                margin: 0 !important;
+            }
+            .page, .page * {
+                visibility: visible;
+            }
+            .page {
+                position: absolute;
+                left: 0;
+                top: 0;
+                margin: 0;
+                padding: 20mm;
+                box-shadow: none;
+                width: 210mm;
+                min-height: 297mm;
+                page-break-after: always;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        .seal-placeholder {
+            width: 100px;
+            height: 100px;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        .watermark {
+            position: absolute;
+            opacity: 0.05;
+            font-size: 120px;
+            transform: rotate(-45deg);
+            z-index: -1;
+            top: 40%;
+            left: 10%;
+            width: 80%;
+            text-align: center;
+            color: #007FFF;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #007FFF;
+            width: 0%;
+            transition: width 0.4s;
+        }
+        .pdf-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-size: 24px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fiscal-info {
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+            background-color: white !important;
+        }
+        .signature-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .header-info {
+            flex: 1;
+            text-align: right;
+        }
+        .header-logo {
+            flex: 1;
+            text-align: center;
+        }
+        .header-fiscal {
+            flex: 1;
+        }
+        .document-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 p-4 md:p-8">
+    <!-- PDF Loader Overlay -->
+    <div id="pdfLoader" class="pdf-loader hidden">
+        <div class="spinner"></div>
+        <div>Génération du PDF en cours...</div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-blue-800 mb-2">SCM COM</h1>
+            <p class="text-gray-600 text-lg max-w-2xl mx-auto">Générateur de documents professionnels pour la République Démocratique du Congo</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Configuration Panel -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-3 flex items-center">
+                        <i class="fas fa-cogs mr-3 text-blue-500"></i> Configuration du document
+                    </h2>
+                    
+                    <!-- Company Info Section -->
+                    <div class="mb-8 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-building mr-2"></i> Informations de l'entreprise
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Logo de l'entreprise</label>
+                                <input type="file" id="logoUpload" accept="image/*" class="block w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-100 file:text-blue-700
+                                    hover:file:bg-blue-200">
+                                <div class="progress-bar mt-1">
+                                    <div class="progress" id="logoProgress"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Sceau de l'entreprise</label>
+                                <input type="file" id="sealUpload" accept="image/*" class="block w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-100 file:text-blue-700
+                                    hover:file:bg-blue-200">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Nom de l'entreprise</label>
+                                <input type="text" id="companyName" placeholder="Nom de l'entreprise" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="Entreprise Congolaise SARL">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Adresse</label>
+                                <input type="text" id="companyAddress" placeholder="Adresse complète" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="123 Avenue de la Nation, Kinshasa">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Informations fiscales</label>
+                            <textarea id="fiscalInfo" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3">RCCM : CD/KNM/RCCM24-B-01256
+IDNAT : 01-F4200-N55523N
+N°IMPÔT : A2442 173s</textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Email de contact</label>
+                                <input type="email" id="contactEmail" placeholder="contact@entreprise.cd" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="contact@entreprise.cd">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Site web</label>
+                                <input type="text" id="website" placeholder="www.entreprise.cd" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="www.entreprise.cd">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Téléphone</label>
+                                <input type="tel" id="phoneNumber" placeholder="+243 XX XXX XX XX" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="+243 81 234 5678">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Document Info Section -->
+                    <div class="mb-8 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-file-signature mr-2"></i> Détails du document
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Référence</label>
+                                <input type="text" id="documentRef" placeholder="Référence du document" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="REF-2023-001">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Date</label>
+                                <input type="date" id="documentDate" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Signature</label>
+                                <input type="file" id="signatureUpload" accept="image/*" class="block w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-100 file:text-blue-700
+                                    hover:file:bg-blue-200">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Destinataire</label>
+                            <input type="text" id="recipient" placeholder="Destinataire du document" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="Monsieur Jean Kabasele, Directeur Général">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Objet</label>
+                            <input type="text" id="documentSubject" placeholder="Objet du document" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="Confirmation de partenariat commercial">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Contenu du document</label>
+                            <textarea id="documentContent" rows="8" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Saisissez le contenu de votre document ici...">Madame, Monsieur,
+
+Par la présente, nous avons le plaisir de vous confirmer notre accord de partenariat pour la distribution de nos produits sur l'ensemble du territoire de la République Démocratique du Congo.
+
+Ce partenariat prendra effet à compter du 1er septembre 2023 et sera valable pour une durée initiale de trois (3) ans, renouvelable par tacite reconduction.
+
+Nous restons à votre disposition pour toute information complémentaire et vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+                        <button id="updatePreviewBtn" class="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-bold py-3 px-8 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg">
+                            <i class="fas fa-sync-alt mr-2"></i> Mettre à jour l'aperçu
+                        </button>
+                        <button id="generateBtn" class="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-bold py-3 px-8 rounded-lg flex items-center justify-center shadow-lg">
+                            <i class="fas fa-file-pdf mr-2"></i> Télécharger PDF
+                        </button>
+                        <button id="clearBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg flex items-center justify-center shadow-lg">
+                            <i class="fas fa-trash-alt mr-2"></i> Effacer
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Document Preview -->
+            <div>
+                <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8">
+                    <h2 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-3 flex items-center">
+                        <i class="fas fa-eye mr-3 text-blue-500"></i> Aperçu du document
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-4 italic">Document formaté pour impression A4</p>
+                    
+                    <div class="flex justify-center">
+                        <div id="documentPreview" class="page p-10 relative">
+                            <div class="watermark">SCM COM</div>
+                            
+                            <div class="header-section">
+                                <div class="header-fiscal fiscal-info">
+                                    <div id="previewFiscalInfo">RCCM : CD/KNM/RCCM24-B-01256<br>IDNAT : 01-F4200-N55523N<br>N°IMPÔT : A2442 173s</div>
+                                </div>
+                                <div class="header-logo">
+                                    <div id="logoPreviewContainer" class="w-40 h-auto mx-auto mb-3">
+                                        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-32 h-32 flex items-center justify-center text-gray-500">
+                                            <i class="fas fa-building text-3xl"></i>
+                                        </div>
+                                    </div>
+                                    <div id="previewCompanyName" class="text-xl font-bold text-blue-800">Entreprise Congolaise SARL</div>
+                                    <div id="previewCompanyAddress" class="text-sm text-gray-600 mt-1">123 Avenue de la Nation, Kinshasa</div>
+                                </div>
+                                <div class="header-info">
+                                    <div id="previewDocumentRef" class="text-sm text-gray-600">Réf: REF-2023-001</div>
+                                    <div id="previewDocumentDate" class="text-sm text-gray-600">Kinshasa, le 01/01/2023</div>
+                                </div>
+                            </div>
+                            
+                            <div class="document-title">DOCUMENT OFFICIEL</div>
+                            
+                            <div class="mb-8">
+                                <div id="previewRecipient" class="font-semibold">À : Monsieur Jean Kabasele, Directeur Général</div>
+                                <div id="previewDocumentSubject" class="font-semibold text-blue-700 mt-2">Objet : Confirmation de partenariat commercial</div>
+                            </div>
+                            
+                            <div id="previewDocumentContent" class="mb-8 flex-grow" style="overflow: auto;">
+                                <p class="mb-4">Madame, Monsieur,</p>
+                                <p class="mb-4">Par la présente, nous avons le plaisir de vous confirmer notre accord de partenariat pour la distribution de nos produits sur l'ensemble du territoire de la République Démocratique du Congo.</p>
+                                <p class="mb-4">Ce partenariat prendra effet à compter du 1er septembre 2023 et sera valable pour une durée initiale de trois (3) ans, renouvelable par tacite reconduction.</p>
+                                <p>Nous restons à votre disposition pour toute information complémentaire et vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
+                            </div>
+                            
+                            <div class="flex justify-end items-end mt-12">
+                                <div class="signature-container">
+                                    <div id="sealPreviewContainer" class="seal-placeholder mb-4" style="width: 120px; height: 120px;">
+                                        <span>Sceau</span>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold">Pour la Direction,</div>
+                                        <div id="previewCompanyNameFooter" class="text-sm mt-1">Entreprise Congolaise SARL</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 mt-16 pt-4 text-center text-xs text-gray-500">
+                                <div id="previewContactInfo" class="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                                    <span id="previewEmail">contact@entreprise.cd</span>
+                                    <span>•</span>
+                                    <span id="previewWebsite">www.entreprise.cd</span>
+                                    <span>•</span>
+                                    <span id="previewPhone">+243 81 234 5678</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 text-center text-sm text-gray-500">
+                        <p><i class="fas fa-info-circle mr-1"></i> Le document final sera généré au format PDF avec une haute qualité d'impression</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('documentDate').value = formattedDate;
+            
+            // Update preview when inputs change
+            const inputs = [
+                'companyName', 'companyAddress', 'fiscalInfo', 'documentRef', 
+                'documentDate', 'recipient', 'documentSubject', 'documentContent', 
+                'contactEmail', 'website', 'phoneNumber'
+            ];
+            
+            inputs.forEach(inputId => {
+                document.getElementById(inputId).addEventListener('input', updatePreview);
+            });
+            
+            // Handle logo upload with progress
+            document.getElementById('logoUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Simulate upload progress
+                    const progressBar = document.getElementById('logoProgress');
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 5;
+                        progressBar.style.width = progress + '%';
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const logoContainer = document.getElementById('logoPreviewContainer');
+                                logoContainer.innerHTML = '';
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.className = 'max-w-full max-h-32 object-contain';
+                                logoContainer.appendChild(img);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }, 100);
+                }
+            });
+            
+            // Handle seal upload
+            document.getElementById('sealUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const sealContainer = document.getElementById('sealPreviewContainer');
+                        sealContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'max-w-full max-h-32 object-contain';
+                        sealContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Handle signature upload
+            document.getElementById('signatureUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const signatureContainer = document.getElementById('signaturePreviewContainer');
+                        signatureContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'max-w-full max-h-20 object-contain';
+                        signatureContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Add update preview button listener with visual feedback
+            const updateBtn = document.getElementById('updatePreviewBtn');
+            updateBtn.addEventListener('click', function(e) {
+                // Add temporary visual feedback
+                this.classList.add('from-blue-800', 'to-blue-900');
+                setTimeout(() => {
+                    this.classList.remove('from-blue-800', 'to-blue-900');
+                }, 200);
+                
+                // Update preview
+                updatePreview(e);
+            });
+            
+            // Clear form button
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                if (confirm("Êtes-vous sûr de vouloir effacer toutes les données ?")) {
+                    // Clear all inputs
+                    inputs.forEach(inputId => {
+                        document.getElementById(inputId).value = '';
+                    });
+                    
+                    // Clear file inputs
+                    document.getElementById('logoUpload').value = '';
+                    document.getElementById('sealUpload').value = '';
+                    document.getElementById('signatureUpload').value = '';
+                    
+                    // Clear preview elements
+                    document.getElementById('logoPreviewContainer').innerHTML = '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-32 h-32 flex items-center justify-center text-gray-500"><i class="fas fa-building text-3xl"></i></div>';
+                    document.getElementById('sealPreviewContainer').innerHTML = '<span>Sceau</span>';
+                    
+                    // Reset progress bar
+                    document.getElementById('logoProgress').style.width = '0%';
+                    
+                    // Set today's date as default
+                    const today = new Date();
+                    const formattedDate = today.toISOString().split('T')[0];
+                    document.getElementById('documentDate').value = formattedDate;
+                    
+                    // Reset fiscal info to default
+                    document.getElementById('fiscalInfo').value = "RCCM : CD/KNM/RCCM24-B-01256\nIDNAT : 01-F4200-N55523N\nN°IMPÔT : A2442 173s";
+                    
+                    // Update preview
+                    updatePreview();
+                }
+            });
+            
+            // Initial preview update
+            updatePreview();
+
+            // Generate PDF
+            document.getElementById('generateBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Show loader
+                document.getElementById('pdfLoader').classList.remove('hidden');
+                
+                // First update preview to ensure latest content
+                updatePreview();
+                
+                // Ensure html2pdf is available
+                if (typeof html2pdf === 'undefined') {
+                    alert('La bibliothèque PDF n\'est pas chargée');
+                    document.getElementById('pdfLoader').classList.add('hidden');
+                    return;
+                }
+                
+                // Configuration for html2pdf with improved settings
+                const opt = {
+                    margin: 0,
+                    filename: 'document_scm_com.pdf',
+                    image: { 
+                        type: 'jpeg', 
+                        quality: 1 
+                    },
+                    html2canvas: { 
+                        scale: 2,
+                        letterRendering: true,
+                        useCORS: true,
+                        logging: false,
+                        allowTaint: false,
+                        scrollX: 0,
+                        scrollY: 0,
+                        width: 794,
+                        height: 1123,
+                        windowWidth: 794,
+                        windowHeight: 1123,
+                        ignoreElements: (element) => element.classList.contains('no-print')
+                    },
+                    jsPDF: { 
+                        unit: 'mm', 
+                        format: 'a4', 
+                        orientation: 'portrait'
+                    }
+                };
+
+                // Get the preview element
+                const element = document.getElementById('documentPreview');
+                
+                // Generate PDF
+                setTimeout(() => {
+                    html2pdf()
+                        .set(opt)
+                        .from(element)
+                        .toPdf()
+                        .get('pdf')
+                        .then(function(pdf) {
+                            pdf.deletePage(2); // Supprime la 2e page vide
+                        })
+                        .save()
+                        .then(() => {
+                            // Hide loader
+                            document.getElementById('pdfLoader').classList.add('hidden');
+                            // Show success message
+                            alert('Document PDF généré avec succès!');
+                        })
+                        .catch(err => {
+                            console.error('PDF generation error:', err);
+                            // Hide loader
+                            document.getElementById('pdfLoader').classList.add('hidden');
+                            alert('Erreur lors de la génération du PDF: ' + err.message);
+                        });
+                }, 500);
+            });
+        });
+        
+        function updatePreview(e) {
+            if(e) e.preventDefault();
+            // Update text fields
+            document.getElementById('previewCompanyName').textContent = 
+                document.getElementById('companyName').value || 'Nom de l\'entreprise';
+            document.getElementById('previewCompanyNameFooter').textContent = 
+                document.getElementById('companyName').value || 'Nom de l\'entreprise';
+                
+            document.getElementById('previewCompanyAddress').textContent = 
+                document.getElementById('companyAddress').value || 'Adresse de l\'entreprise';
+                
+            document.getElementById('previewFiscalInfo').innerHTML = 
+                (document.getElementById('fiscalInfo').value || "RCCM : CD/KNM/RCCM24-B-01256<br>IDNAT : 01-F4200-N55523N<br>N°IMPÔT : A2442 173s")
+                .replace(/\n/g, '<br>');
+                
+            document.getElementById('previewDocumentRef').textContent = 
+                'Réf: ' + (document.getElementById('documentRef').value || 'DOC-' + new Date().getFullYear() + '-001');
+                
+            const dateInput = document.getElementById('documentDate').value;
+            const formattedDate = dateInput ? formatDate(dateInput) : 'Kinshasa, le 01/01/' + new Date().getFullYear();
+            document.getElementById('previewDocumentDate').textContent = formattedDate;
+            
+            document.getElementById('previewRecipient').textContent = 
+                'À : ' + (document.getElementById('recipient').value || 'Destinataire du document');
+                
+            document.getElementById('previewDocumentSubject').textContent = 
+                'Objet : ' + (document.getElementById('documentSubject').value || 'Objet du document');
+                
+            const content = document.getElementById('documentContent').value || 
+                `Madame, Monsieur,
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.
+
+Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.
+
+Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.`;
+            // Convert newlines to paragraphs while preserving line breaks
+            let htmlContent = content.split('\n\n').map(paragraph => 
+                `<p class="mb-4">${paragraph.replace(/\n/g, '<br>')}</p>`
+            ).join('');
+            document.getElementById('previewDocumentContent').innerHTML = htmlContent;
+                
+            // Update contact info
+            const email = document.getElementById('contactEmail').value || 'contact@entreprise.cd';
+            const website = document.getElementById('website').value || 'www.entreprise.cd';
+            const phone = document.getElementById('phoneNumber').value || '+243 XX XXX XX XX';
+            
+            document.getElementById('previewEmail').textContent = email;
+            document.getElementById('previewWebsite').textContent = website;
+            document.getElementById('previewPhone').textContent = phone;
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `Kinshasa, le ${day}/${month}/${year}`;
+        }
+    </script>
+</body>
+</html>

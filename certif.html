@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Certificats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        .certificate {
+            background-color: #f8f8f8;
+            border: 20px solid #1a365d;
+            position: relative;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background-image: 
+                linear-gradient(to right, rgba(234, 179, 8, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(234, 179, 8, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        .certificate::before, .certificate::after {
+            content: "";
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 8px solid #ecc94b;
+        }
+        
+        .certificate::before {
+            top: 30px;
+            left: 30px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .certificate::after {
+            bottom: 30px;
+            right: 30px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .certificate-border {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid rgba(234, 179, 8, 0.3);
+            pointer-events: none;
+        }
+
+        .title-decoration {
+            position: relative;
+            display: inline-block;
+        }
+
+        .title-decoration::before, 
+        .title-decoration::after {
+            content: "✧";
+            position: absolute;
+            color: #d69e2e;
+            font-size: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .title-decoration::before {
+            left: -40px;
+        }
+
+        .title-decoration::after {
+            right: -40px;
+        }
+        
+        .title {
+            font-family: 'Playfair Display', serif;
+            color: #1a365d;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #4a5568;
+            width: 200px;
+            display: inline-block;
+        }
+        
+        .gold-text {
+            color: #d69e2e;
+        }
+        
+        .logo-preview, .photo-preview {
+            max-height: 100px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        
+        .watermark {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 120px;
+            color: #1a365d;
+            transform: rotate(-30deg);
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-2">
+        <a href="https://app.scmsarl.site/" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-md transition duration-300 inline-flex items-center mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> RETOUR
+        </a>
+    </div>
+    <div class="container mx-auto px-4 py-4">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-900 mb-2">SCM SARL</h1>
+            <h2 class="text-2xl font-semibold text-yellow-700">Générateur de Certificats de Formation</h2>
+            <p class="text-gray-600 mt-2">Générez des certificats professionnels pour vos collaborateurs</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Section -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-blue-900 border-b pb-2">Paramètres du Certificat</h3>
+                
+                <form id="certificateForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-1">Nom du Lauréat</label>
+                        <input type="text" id="recipientName" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Nom complet" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Intitulé de la Formation</label>
+                        <input type="text" id="courseName" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Ex: Gestion de chantier" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Date d'obtention</label>
+                        <input type="date" id="completionDate" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Durée de la formation</label>
+                        <input type="text" id="courseDuration" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Ex: 40 heures">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Numéro de certificat</label>
+                        <input type="text" id="certificateNumber" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Ex: SCM-2023-001">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Photo du lauréat</label>
+                        <input type="file" id="recipientPhoto" accept="image/*" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <div class="mt-2">
+                            <img id="photoPreview" class="photo-preview hidden mx-auto">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Logo de l'entreprise</label>
+                        <input type="file" id="companyLogo" accept="image/*" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <div class="mt-2">
+                            <img id="logoPreview" class="logo-preview hidden mx-auto">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Nom du signataire</label>
+                        <input type="text" id="signatoryName" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Directeur SCM SARL">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 mb-1">Message personnalisé</label>
+                        <textarea id="customMessage" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Message optionnel"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-1">Signature du directeur</label>
+                        <input type="file" id="directorSignature" accept="image/*" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <div class="mt-2">
+                            <img id="signaturePreview" class="photo-preview hidden mx-auto" style="max-height: 80px;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-1">Cachet de l'entreprise</label>
+                        <input type="file" id="companyStamp" accept="image/*" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <div class="mt-2">
+                            <img id="stampPreview" class="photo-preview hidden mx-auto" style="max-height: 80px;">
+                        </div>
+                    </div>
+
+                    <div id="customFieldsContainer" class="space-y-4">
+                        <!-- Custom fields will be added here -->
+                    </div>
+
+                    <button type="button" id="addFieldBtn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Ajouter un champ personnalisé
+                    </button>
+                    
+                    <button type="button" id="generateBtn" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-certificate mr-2"></i> Générer le Certificat
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Preview Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-900">Aperçu du Certificat</h3>
+                        <button id="downloadBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center disabled:opacity-50 cursor-pointer hover:scale-105 active:scale-95" disabled>
+                            <i class="fas fa-download mr-2"></i> Télécharger PDF
+                        </button>
+                    </div>
+                    
+                    <div id="certificatePreview" class="certificate p-12 mx-auto bg-white" style="width: 210mm; height: 297mm; position: relative; transform: scale(0.9); transform-origin: top left;">
+                        <div class="certificate-border"></div>
+                        
+                        <!-- Header with Logo -->
+                        <div class="flex justify-between items-center mb-8">
+                            <div id="logoContainer" class="w-32 h-32 flex items-center justify-center">
+                                <!-- Logo will be inserted here -->
+                            </div>
+                            <div class="text-right">
+                                <p class="text-gray-600">Certificat de Formation Professionnelle</p>
+                                <p id="certNumberDisplay" class="font-bold text-blue-900">N°: SCM-2023-001</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Main Content -->
+                        <div class="text-center mb-12">
+                            <h1 class="title text-5xl font-bold mb-4 title-decoration">CERTIFICAT</h1>
+                            <p class="text-xl mb-8">Décerné à</p>
+                            <h2 id="recipientNameDisplay" class="title text-4xl font-bold mb-6 gold-text" style="text-transform: uppercase; text-shadow: 1px 1px 3px rgba(0,0,0,0.1); letter-spacing: 1px;">Nom du Lauréat</h2>
+                            
+                            <div id="photoContainer" class="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-yellow-500">
+                                <!-- Photo will be inserted here -->
+                            </div>
+                            
+                            <p class="text-xl mb-2">pour avoir suivi avec succès la formation</p>
+                            <h3 id="courseNameDisplay" class="title text-3xl font-semibold mb-6">Intitulé de la Formation</h3>
+                            
+                            <p class="text-lg mb-8">d'une durée de <span id="courseDurationDisplay" class="font-semibold">40 heures</span>, achevée le <span id="completionDateDisplay" class="font-semibold">01 janvier 2023</span></p>
+                            
+                            <div id="customMessageContainer" class="italic text-lg mb-8 max-w-2xl mx-auto">
+                                <!-- Custom message will be inserted here -->
+                            </div>
+
+                            <div id="customFieldsDisplay" class="space-y-2 mb-12">
+                                <!-- Custom fields will be displayed here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Footer with Signatures -->
+                        <div class="absolute bottom-8 left-0 right-0 px-8">
+                            <div class="flex justify-between">
+                                <div class="text-center">
+                                    <p id="signatoryNameDisplay" class="text-sm mb-2">Directeur SCM SARL</p>
+                                    <div id="signatureContainer" class="h-20 mb-2 flex items-center justify-center">
+                                        <div class="signature-line mb-2"></div>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm mb-2">Fait à Kinshasa, le <span id="issueDateDisplay" class="font-semibold">01 janvier 2023</span></p>
+                                    <div id="stampContainer" class="flex justify-center h-40">
+                                        <!-- Stamp will be inserted here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-900 border-b pb-2">Instructions</h3>
+                    <ol class="list-decimal pl-5 space-y-2 text-gray-700">
+                        <li>Remplissez tous les champs obligatoires du formulaire</li>
+                        <li>Optionnellement, téléchargez une photo du lauréat et le logo de l'entreprise</li>
+                        <li>Cliquez sur "Générer le Certificat" pour mettre à jour l'aperçu</li>
+                        <li>Vérifiez que tout est correct dans l'aperçu</li>
+                        <li>Cliquez sur "Télécharger PDF" pour obtenir votre certificat</li>
+                        <li>Imprimez le PDF sur du papier de qualité pour un résultat professionnel</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Custom fields management
+            const customFieldsContainer = document.getElementById('customFieldsContainer');
+            const customFieldsDisplay = document.getElementById('customFieldsDisplay');
+            const addFieldBtn = document.getElementById('addFieldBtn');
+            
+            // Add custom field button
+            addFieldBtn.addEventListener('click', function() {
+                const fieldId = Date.now(); // Unique ID for the field
+                
+                // Create field input in form
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'flex items-end space-x-2';
+                fieldDiv.innerHTML = `
+                    <div class="flex-1">
+                        <label class="block text-gray-700 mb-1">Libellé du champ</label>
+                        <input type="text" class="field-label w-full px-3 py-2 border rounded-md" placeholder="Ex: Mention">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-gray-700 mb-1">Valeur</label>
+                        <input type="text" class="field-value w-full px-3 py-2 border rounded-md" placeholder="Ex: Très Bien">
+                    </div>
+                    <button type="button" class="remove-field-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                // Add remove field functionality
+                const removeBtn = fieldDiv.querySelector('.remove-field-btn');
+                removeBtn.addEventListener('click', function() {
+                    fieldDiv.remove();
+                    updateCertificateFields();
+                });
+                
+                // Add change listeners
+                const inputs = fieldDiv.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('input', updateCertificateFields);
+                });
+                
+                customFieldsContainer.appendChild(fieldDiv);
+            });
+            
+            // Update certificate fields display
+            function updateCertificateFields() {
+                customFieldsDisplay.innerHTML = '';
+                
+                const fields = customFieldsContainer.querySelectorAll('.field-label');
+                fields.forEach(labelInput => {
+                    const fieldDiv = labelInput.closest('div.flex');
+                    const label = labelInput.value;
+                    const value = fieldDiv.querySelector('.field-value').value;
+                    
+                    if (label && value) {
+                        const displayDiv = document.createElement('div');
+                        displayDiv.className = 'text-lg';
+                        displayDiv.innerHTML = `<strong>${label}:</strong> ${value}`;
+                        customFieldsDisplay.appendChild(displayDiv);
+                    }
+                });
+            }
+            // Initialize jsPDF
+            const { jsPDF } = window.jspdf;
+            
+            // Form elements
+            const form = document.getElementById('certificateForm');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            // Input fields
+            const recipientNameInput = document.getElementById('recipientName');
+            const courseNameInput = document.getElementById('courseName');
+            const completionDateInput = document.getElementById('completionDate');
+            const courseDurationInput = document.getElementById('courseDuration');
+            const certificateNumberInput = document.getElementById('certificateNumber');
+            const recipientPhotoInput = document.getElementById('recipientPhoto');
+            const companyLogoInput = document.getElementById('companyLogo');
+            const signatoryNameInput = document.getElementById('signatoryName');
+            const customMessageInput = document.getElementById('customMessage');
+            
+            // Preview elements
+            const recipientNameDisplay = document.getElementById('recipientNameDisplay');
+            const courseNameDisplay = document.getElementById('courseNameDisplay');
+            const completionDateDisplay = document.getElementById('completionDateDisplay');
+            const courseDurationDisplay = document.getElementById('courseDurationDisplay');
+            const certNumberDisplay = document.getElementById('certNumberDisplay');
+            const signatoryNameDisplay = document.getElementById('signatoryNameDisplay');
+            const issueDateDisplay = document.getElementById('issueDateDisplay');
+            const customMessageContainer = document.getElementById('customMessageContainer');
+            const photoContainer = document.getElementById('photoContainer');
+            const logoContainer = document.getElementById('logoContainer');
+            const photoPreview = document.getElementById('photoPreview');
+            const logoPreview = document.getElementById('logoPreview');
+            
+            // Set today's date as default for issue date
+            const today = new Date();
+            issueDateDisplay.textContent = formatDate(today);
+            
+            // Set default completion date to today if not set
+            if (!completionDateInput.value) {
+                completionDateInput.valueAsDate = today;
+            }
+            
+            // Event listeners for file inputs
+            recipientPhotoInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // Update preview image
+                        photoPreview.src = event.target.result;
+                        photoPreview.classList.remove('hidden');
+                        
+                        // Update certificate photo
+                        photoContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'w-full h-full object-cover';
+                        photoContainer.appendChild(img);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            companyLogoInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // Update preview image
+                        logoPreview.src = event.target.result;
+                        logoPreview.classList.remove('hidden');
+                        
+                        // Update certificate logo
+                        logoContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'max-h-full max-w-full';
+                        logoContainer.appendChild(img);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle director signature image
+            const directorSignatureInput = document.getElementById('directorSignature');
+            const signaturePreview = document.getElementById('signaturePreview');
+            const signatureContainer = document.getElementById('signatureContainer');
+            
+            directorSignatureInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // Update preview image
+                        signaturePreview.src = event.target.result;
+                        signaturePreview.classList.remove('hidden');
+                        
+                        // Update certificate signature
+                        signatureContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'max-h-full max-w-full';
+                        signatureContainer.appendChild(img);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle company stamp image
+            const companyStampInput = document.getElementById('companyStamp');
+            const stampPreview = document.getElementById('stampPreview');
+            const stampContainer = document.getElementById('stampContainer');
+            
+            companyStampInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // Update preview image
+                        stampPreview.src = event.target.result;
+                        stampPreview.classList.remove('hidden');
+                        
+                        // Update certificate stamp
+                        stampContainer.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'max-h-full max-w-full';
+                        stampContainer.appendChild(img);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Generate certificate button
+            generateBtn.addEventListener('click', function() {
+                if (!form.checkValidity()) {
+                    alert('Veuillez remplir tous les champs obligatoires');
+                    return;
+                }
+                
+                // Update certificate content
+                recipientNameDisplay.textContent = recipientNameInput.value;
+                courseNameDisplay.textContent = courseNameInput.value;
+                
+                if (completionDateInput.value) {
+                    const completionDate = new Date(completionDateInput.value);
+                    completionDateDisplay.textContent = formatDate(completionDate);
+                }
+                
+                if (courseDurationInput.value) {
+                    courseDurationDisplay.textContent = courseDurationInput.value;
+                }
+                
+                if (certificateNumberInput.value) {
+                    certNumberDisplay.textContent = `N°: ${certificateNumberInput.value}`;
+                }
+                
+                if (signatoryNameInput.value) {
+                    signatoryNameDisplay.textContent = signatoryNameInput.value;
+                }
+                
+                if (customMessageInput.value) {
+                    customMessageContainer.innerHTML = `<p class="italic">"${customMessageInput.value}"</p>`;
+                } else {
+                    customMessageContainer.innerHTML = '';
+                }
+                
+                // Enable download button
+                downloadBtn.disabled = false;
+                
+                // Scroll to preview
+                document.getElementById('certificatePreview').scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Download PDF button
+            downloadBtn.addEventListener('click', async function() {
+                try {
+                    const certificateElement = document.getElementById('certificatePreview');
+                    
+                    // Show loading state
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Génération en cours...';
+                    this.disabled = true;
+                    
+                    // Use html2canvas to capture the certificate with better settings
+                    const canvas = await html2canvas(certificateElement, {
+                        scale: 2, // Better balance between quality and performance
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true,
+                        letterRendering: true,
+                        backgroundColor: '#ffffff',
+                        dpi: 300,
+                        onclone: (clonedDoc) => {
+                            const clonedPreview = clonedDoc.getElementById('certificatePreview');
+                            clonedPreview.style.transform = 'scale(1)';
+                            clonedPreview.style.width = '210mm';
+                            clonedPreview.style.height = '297mm';
+                            clonedPreview.style.position = 'relative';
+                            clonedPreview.style.overflow = 'visible';
+                            
+                            // Force all images to be visible
+                            const images = clonedPreview.querySelectorAll('img');
+                            images.forEach(img => {
+                                img.style.display = 'block';
+                                img.style.maxWidth = '100%';
+                                img.style.height = 'auto';
+                            });
+                        }
+                    });
+                    
+                    // Create PDF with precise dimensions
+                    const imgData = canvas.toDataURL('image/png', 1.0);
+                    const pdf = new jsPDF({
+                        unit: 'mm',
+                        format: 'a4',
+                        hotfixes: ['px_scaling'],
+                        precision: 100 // Higher precision for better quality
+                    });
+                    
+                    // Add image to PDF with exact A4 dimensions
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+                    
+                    // Ensure all content is visible
+                    pdf.setDisplayMode('fullwidth');
+                    
+                    // Download the PDF
+                    const fileName = `Certificat_SCM_${recipientNameInput.value.replace(/\s+/g, '_')}.pdf`;
+                    pdf.save(fileName);
+                    
+                } catch (error) {
+                    console.error('Erreur lors de la génération du PDF:', error);
+                    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+                } finally {
+                    // Restore button state
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            });
+            
+            // Helper function to format date
+            function formatDate(date) {
+                const options = { day: '2-digit', month: 'long', year: 'numeric' };
+                return date.toLocaleDateString('fr-FR', options);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Contrat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a3a6c;
+            --secondary: #2c5aa0;
+            --light: #f8f9fa;
+            --dark: #34495e;
+            --border: #cbd5e0;
+            --accent: #1a6c3a;
+            --danger: #e74c3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e6f0ff 0%, #c3d9ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        header {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--secondary);
+            position: relative;
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: white;
+        }
+        
+        .logo-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .logo-container {
+            width: 150px;
+            height: 150px;
+            border: 2px dashed var(--secondary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: white;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .logo-container:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-preview {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+        
+        .logo-placeholder {
+            text-align: center;
+            color: var(--secondary);
+            font-size: 12px;
+            padding: 8px;
+        }
+        
+        .logo-placeholder i {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 6px;
+            color: var(--secondary);
+        }
+        
+        #logoInput {
+            display: none;
+        }
+        
+        .form-section, .preview-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--secondary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background-color: var(--light);
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+        
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-top: 12px;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            background: #1a3a6c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-download {
+            background: var(--accent);
+            width: 100%;
+        }
+        
+        .btn-download:hover {
+            background: #14522d;
+        }
+        
+        .btn-add {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 5px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .btn-upload {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 5px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .btn-remove {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 5px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .contract-preview {
+            background: white;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            position: relative;
+            background-color: white;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .contract-header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--secondary);
+        }
+        
+        .contract-logo {
+            max-height: 45px;
+            margin-bottom: 6px;
+        }
+        
+        .contract-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .contract-section {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            background: white;
+            border-left: 3px solid var(--secondary);
+        }
+        
+        .section-heading {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #cbd5e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .remove-section {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .signature-box {
+            width: 45%;
+            text-align: center;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .signature-line {
+            height: 1px;
+            background: #000;
+            margin: 15px 0 5px;
+            width: 100%;
+        }
+        
+        .signature-preview, .stamp-preview {
+            max-height: 75px;
+            margin: 5px auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        
+        .footer {
+            width: 100%;
+            text-align: center;
+            margin-top: 12px;
+            color: var(--dark);
+            font-size: 12px;
+            padding: 8px;
+        }
+        
+        .compact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        
+        .blue-text {
+            color: var(--secondary);
+            font-weight: 500;
+        }
+        
+        .contract-content {
+            flex-grow: 1;
+        }
+        
+        .signature-container {
+            margin-top: auto;
+            padding-top: 15px;
+        }
+        
+        .additional-line {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .additional-line input {
+            flex-grow: 1;
+        }
+        
+        .remove-line {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            margin-left: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .additional-field {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f0f7ff;
+            border-radius: 4px;
+            border-left: 2px solid var(--secondary);
+        }
+        
+        .field-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .field-group input {
+            flex: 1;
+        }
+        
+        .upload-container {
+            margin-top: 10px;
+            border: 1px dashed var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            background: #f9fbfd;
+            text-align: center;
+        }
+        
+        .upload-preview {
+            max-width: 100%;
+            max-height: 100px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
+        }
+        
+        /* Optimisation pour le format A4 */
+        .contract-section p {
+            margin: 6px 0;
+            font-size: 13px;
+        }
+        
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .form-section, .preview-section {
+                width: 100%;
+            }
+            
+            .contract-preview {
+                width: 100%;
+                height: auto;
+                min-height: auto;
+            }
+            
+            .compact-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .signature-area {
+                flex-direction: row;
+                gap: 10px;
+            }
+            
+            .signature-box {
+                width: 48%;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-section, .preview-section {
+                padding: 12px;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+            }
+            
+            .logo-container {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .contract-preview {
+                font-size: 9px;
+                padding: 10px;
+            }
+            
+            .contract-section {
+                padding: 6px;
+            }
+            
+            .signature-area {
+                flex-direction: column;
+            }
+            
+            .signature-box {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: right; padding: 10px 20px;">
+        <button onclick="window.location.href='https://app.scmsarl.site/'" 
+                style="background: #1a3a6c; color: white; border: none; padding: 8px 16px; 
+                       border-radius: 4px; cursor: pointer; font-weight: bold;">
+            RETOUR
+        </button>
+    </div>
+    <header>
+        <h1><i class="fas fa-file-contract"></i> SCM SARL</h1>
+        <p>Générateur de Contrats Professionnels</p>
+    </header>
+    
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo-container" id="logoContainer">
+                <div class="logo-placeholder">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Ajouter logo</span>
+                </div>
+                <img id="logoPreview" class="logo-preview" alt="Logo Preview">
+                <input type="file" id="logoInput" accept="image/*">
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2 class="section-title"><i class="fas fa-building"></i> Employeur</h2>
+            
+            <div class="form-group">
+                <label for="employerName">Nom de l'entreprise :</label>
+                <input type="text" id="employerName" value="SCM SARL">
+            </div>
+            
+            <div id="employerAdditionalFields">
+                <div class="additional-field">
+                    <div class="field-group">
+                        <input type="text" placeholder="Label (ex: Adresse)" value="Adresse">
+                        <input type="text" placeholder="Valeur" value="123 Avenue Lumumba, Gombe">
+                    </div>
+                    <button class="btn-add" onclick="addEmployerField()">
+                        <i class="fas fa-plus"></i> Ajouter un champ
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Cachet de l'employeur -->
+            <div class="form-group">
+                <label>Cachet de l'entreprise :</label>
+                <div class="upload-container">
+                    <input type="file" id="stampInput" accept="image/*" style="display: none;">
+                    <button class="btn-upload" onclick="document.getElementById('stampInput').click()">
+                        <i class="fas fa-stamp"></i> Importer un cachet
+                    </button>
+                    <img id="stampPreview" class="upload-preview" alt="Stamp Preview">
+                    <button class="btn-remove" onclick="removeImage('stampPreview', 'previewStamp')">
+                        <i class="fas fa-trash"></i> Supprimer le cachet
+                    </button>
+                </div>
+            </div>
+            
+            <h2 class="section-title" style="margin-top: 15px;"><i class="fas fa-user-tie"></i> Salarié</h2>
+            
+            <div class="form-group">
+                <label for="employeeName">Nom complet :</label>
+                <input type="text" id="employeeName" placeholder="Nom complet" value="Paul Mbemba">
+            </div>
+            
+            <div id="employeeAdditionalFields">
+                <div class="additional-field">
+                    <div class="field-group">
+                        <input type="text" placeholder="Label (ex: Adresse)" value="Adresse">
+                        <input type="text" placeholder="Valeur" value="456 Avenue de la Libération">
+                    </div>
+                    <button class="btn-add" onclick="addEmployeeField()">
+                        <i class="fas fa-plus"></i> Ajouter un champ
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Signature du salarié -->
+            <div class="form-group">
+                <label>Signature du salarié :</label>
+                <div class="upload-container">
+                    <input type="file" id="signatureInput" accept="image/*" style="display: none;">
+                    <button class="btn-upload" onclick="document.getElementById('signatureInput').click()">
+                        <i class="fas fa-signature"></i> Importer une signature
+                    </button>
+                    <img id="signaturePreview" class="upload-preview" alt="Signature Preview">
+                    <button class="btn-remove" onclick="removeImage('signaturePreview', 'previewSignature')">
+                        <i class="fas fa-trash"></i> Supprimer la signature
+                    </button>
+                </div>
+            </div>
+            
+            <h2 class="section-title" style="margin-top: 15px;"><i class="fas fa-file-alt"></i> Détails du contrat</h2>
+            
+            <div class="form-group" id="posteGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>1. Poste</label>
+                    <button class="btn-remove" onclick="removeSection('posteGroup', 'previewPoste')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <input type="text" id="jobFunction" placeholder="Fonction (ex: Maçon, Chauffeur)" value="Chauffeur poids lourd">
+                <input type="text" id="workplace" placeholder="Lieu de travail" value="Dépôt principal et livraisons" style="margin-top: 8px;">
+                <button class="btn-add" onclick="addLine('posteGroup')">
+                    <i class="fas fa-plus"></i> Ajouter une ligne
+                </button>
+            </div>
+            
+            <div class="form-group" id="typeContratGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>2. Type de contrat</label>
+                    <button class="btn-remove" onclick="removeSection('typeContratGroup', 'previewTypeContrat')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <select id="contractType">
+                    <option value="CDD">CDD</option>
+                    <option value="CDI">CDI</option>
+                </select>
+                <div id="cddDates" style="display: none; margin-top: 8px;">
+                    <div class="compact-grid">
+                        <div class="form-group">
+                            <label for="cddStartDate">Date de début :</label>
+                            <input type="date" id="cddStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="cddEndDate">Date de fin :</label>
+                            <input type="date" id="cddEndDate">
+                        </div>
+                    </div>
+                </div>
+                <div id="cdiDate" style="margin-top: 8px;">
+                    <div class="form-group">
+                        <label for="cdiStartDate">Date de début :</label>
+                        <input type="date" id="cdiStartDate" value="2025-07-01">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group" id="salaireGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>3. Salaire</label>
+                    <button class="btn-remove" onclick="removeSection('salaireGroup', 'previewSalaire')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <input type="text" id="salary" placeholder="Montant mensuel brut" value="500 000 FC">
+                <button class="btn-add" onclick="addLine('salaireGroup')">
+                    <i class="fas fa-plus"></i> Ajouter une ligne
+                </button>
+            </div>
+            
+            <div class="form-group" id="horairesGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>4. Horaires</label>
+                    <button class="btn-remove" onclick="removeSection('horairesGroup', 'previewHoraires')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <input type="text" id="workHours" placeholder="Ex: Lundi à samedi, 7h30 à 16h30" value="Lundi à samedi, 7h30 à 16h30">
+                <button class="btn-add" onclick="addLine('horairesGroup')">
+                    <i class="fas fa-plus"></i> Ajouter une ligne
+                </button>
+            </div>
+            
+            <div class="form-group" id="engagementGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>5. Engagement</label>
+                    <button class="btn-remove" onclick="removeSection('engagementGroup', 'previewEngagement')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <input type="text" id="engagement" placeholder="Ex: Respect des consignes et sécurité" value="Le salarié s'engage à respecter les consignes, la sécurité et les règles de travail.">
+                <button class="btn-add" onclick="addLine('engagementGroup')">
+                    <i class="fas fa-plus"></i> Ajouter une ligne
+                </button>
+            </div>
+            
+            <div class="form-group" id="ruptureGroup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>6. Rupture</label>
+                    <button class="btn-remove" onclick="removeSection('ruptureGroup', 'previewRupture')">
+                        <i class="fas fa-trash"></i> Supprimer cette section
+                    </button>
+                </div>
+                <input type="text" id="noticePeriod" placeholder="Ex: Préavis de 7 jours" value="Préavis : 15 jours - sauf faute grave.">
+                <button class="btn-add" onclick="addLine('ruptureGroup')">
+                    <i class="fas fa-plus"></i> Ajouter une ligne
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label for="contractDate">Date du contrat :</label>
+                <input type="date" id="contractDate">
+            </div>
+            
+            <button class="btn" id="updatePreview">
+                <i class="fas fa-sync-alt"></i> Mettre à jour l'aperçu
+            </button>
+        </div>
+        
+        <div class="preview-section">
+            <h2 class="section-title"><i class="fas fa-eye"></i> Aperçu du Contrat (Format A4)</h2>
+            
+            <div class="contract-preview" id="contractPreview">
+                <div class="contract-content">
+                    <div class="contract-header">
+                        <img id="contractLogo" class="contract-logo" alt="Company Logo">
+                        <h2 class="contract-title">CONTRAT DE TRAVAIL</h2>
+                    </div>
+                    
+                    <div class="contract-section">
+                        <p>Entre :</p>
+                        <p>L'Employeur : <span id="previewEmployerName" class="blue-text">SCM SARL</span></p>
+                        <div id="previewEmployerAdditional"></div>
+                        <p>Le Salarié : <span id="previewEmployeeName" class="blue-text">Paul Mbemba</span></p>
+                        <div id="previewEmployeeAdditional"></div>
+                    </div>
+                    
+                    <div class="contract-section" id="previewPoste">
+                        <div class="section-heading">
+                            <span>1. Poste</span>
+                        </div>
+                        <p>Fonction : <span id="previewJobFunction">Chauffeur poids lourd</span></p>
+                        <p>Lieu de travail : <span id="previewWorkplace">Dépôt principal et livraisons</span></p>
+                    </div>
+                    
+                    <div class="contract-section" id="previewTypeContrat">
+                        <div class="section-heading">
+                            <span>2. Type de contrat</span>
+                        </div>
+                        <p id="previewCddBlock" style="display: none;">CDD : du <span id="previewCddStartDate">[date]</span> au <span id="previewCddEndDate">[date]</span></p>
+                        <p id="previewCdiBlock">CDI : à partir du <span id="previewCdiStartDate">01/07/2025</span></p>
+                    </div>
+                    
+                    <div class="contract-section" id="previewSalaire">
+                        <div class="section-heading">
+                            <span>3. Salaire</span>
+                        </div>
+                        <p>Montant mensuel brut : <span id="previewSalary" class="blue-text">500 000 FC</span></p>
+                    </div>
+                    
+                    <div class="contract-section" id="previewHoraires">
+                        <div class="section-heading">
+                            <span>4. Horaires</span>
+                        </div>
+                        <p>Lundi à samedi, 7h30 à 16h30</p>
+                    </div>
+                    
+                    <div class="contract-section" id="previewEngagement">
+                        <div class="section-heading">
+                            <span>5. Engagement</span>
+                        </div>
+                        <p>Le salarié s'engage à respecter les consignes, la sécurité et les règles de travail.</p>
+                    </div>
+                    
+                    <div class="contract-section" id="previewRupture">
+                        <div class="section-heading">
+                            <span>6. Rupture</span>
+                        </div>
+                        <p>Préavis : 15 jours - sauf faute grave.</p>
+                    </div>
+                    
+                    <div class="contract-section">
+                        <p>Fait à Kinshasa, le <span id="previewContractDate">17/06/2025</span></p>
+                    </div>
+                    
+                    <div class="signature-container">
+                        <div class="signature-area">
+                            <div class="signature-box">
+                                <p>Direction SCM SARL</p>
+                                <img id="previewStamp" class="stamp-preview" alt="Stamp Preview">
+                                <div class="signature-line"></div>
+                                <p>Le Directeur</p>
+                            </div>
+                            <div class="signature-box">
+                                <p>Salarié</p>
+                                <img id="previewSignature" class="signature-preview" alt="Signature Preview">
+                                <div class="signature-line"></div>
+                                <p>"Lu et approuvé"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-download" id="downloadPdf">
+                <i class="fas fa-download"></i> Télécharger en PDF (1 page A4)
+            </button>
+        </div>
+    </div>
+    
+    <div class="footer">
+        SCM SARL - Générateur de Contrats Professionnels | © 2025 Tous droits réservés
+    </div>
+
+    <script>
+        // DOM Elements
+        const logoContainer = document.getElementById('logoContainer');
+        const logoInput = document.getElementById('logoInput');
+        const logoPreview = document.getElementById('logoPreview');
+        const contractLogo = document.getElementById('contractLogo');
+        const contractType = document.getElementById('contractType');
+        const cddDates = document.getElementById('cddDates');
+        const cdiDate = document.getElementById('cdiDate');
+        const updatePreviewBtn = document.getElementById('updatePreview');
+        const downloadPdfBtn = document.getElementById('downloadPdf');
+        const signatureInput = document.getElementById('signatureInput');
+        const signaturePreview = document.getElementById('signaturePreview');
+        const previewSignature = document.getElementById('previewSignature');
+        const stampInput = document.getElementById('stampInput');
+        const stampPreview = document.getElementById('stampPreview');
+        const previewStamp = document.getElementById('previewStamp');
+        
+        // Set current date
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+        document.getElementById('contractDate').valueAsDate = now;
+        document.getElementById('previewContractDate').textContent = formattedDate;
+        
+        // Logo handling
+        logoContainer.addEventListener('click', () => {
+            logoInput.click();
+        });
+        
+        logoInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    logoPreview.src = e.target.result;
+                    logoPreview.style.display = 'block';
+                    contractLogo.src = e.target.result;
+                    contractLogo.style.display = 'block';
+                    
+                    // Hide placeholder
+                    document.querySelector('.logo-placeholder').style.display = 'none';
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Signature handling
+        signatureInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    signaturePreview.src = e.target.result;
+                    signaturePreview.style.display = 'block';
+                    previewSignature.src = e.target.result;
+                    previewSignature.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Stamp handling
+        stampInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    stampPreview.src = e.target.result;
+                    stampPreview.style.display = 'block';
+                    previewStamp.src = e.target.result;
+                    previewStamp.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Remove image function
+        function removeImage(previewId, previewElementId) {
+            document.getElementById(previewId).style.display = 'none';
+            document.getElementById(previewId).src = '';
+            document.getElementById(previewElementId).style.display = 'none';
+            document.getElementById(previewElementId).src = '';
+        }
+        
+        // Contract type toggle
+        contractType.addEventListener('change', function() {
+            if (this.value === 'CDD') {
+                cddDates.style.display = 'block';
+                cdiDate.style.display = 'none';
+                
+                // Set default CDD dates
+                const startDate = new Date();
+                const endDate = new Date();
+                endDate.setMonth(startDate.getMonth() + 6);
+                
+                document.getElementById('cddStartDate').valueAsDate = startDate;
+                document.getElementById('cddEndDate').valueAsDate = endDate;
+            } else {
+                cddDates.style.display = 'none';
+                cdiDate.style.display = 'block';
+                
+                // Set default CDI date
+                document.getElementById('cdiStartDate').valueAsDate = new Date();
+            }
+        });
+        
+        // Add additional lines to sections
+        function addLine(sectionId) {
+            const section = document.getElementById(sectionId);
+            const newLine = document.createElement('div');
+            newLine.className = 'additional-line';
+            newLine.innerHTML = `
+                <input type="text" placeholder="Ajouter une nouvelle ligne">
+                <button class="remove-line" onclick="this.parentElement.remove()">×</button>
+            `;
+            section.appendChild(newLine);
+        }
+        
+        // Add additional fields to Employer section
+        function addEmployerField() {
+            const container = document.getElementById('employerAdditionalFields');
+            const newField = document.createElement('div');
+            newField.className = 'additional-field';
+            newField.innerHTML = `
+                <div class="field-group">
+                    <input type="text" placeholder="Label (ex: Téléphone)" value="">
+                    <input type="text" placeholder="Valeur" value="">
+                </div>
+                <button class="btn-add" onclick="addEmployerField()">
+                    <i class="fas fa-plus"></i> Ajouter un champ
+                </button>
+                <button class="btn-remove" onclick="this.parentElement.remove()">
+                    <i class="fas fa-trash"></i> Supprimer ce champ
+                </button>
+            `;
+            container.appendChild(newField);
+        }
+        
+        // Add additional fields to Employee section
+        function addEmployeeField() {
+            const container = document.getElementById('employeeAdditionalFields');
+            const newField = document.createElement('div');
+            newField.className = 'additional-field';
+            newField.innerHTML = `
+                <div class="field-group">
+                    <input type="text" placeholder="Label (ex: Date de naissance)" value="">
+                    <input type="text" placeholder="Valeur" value="">
+                </div>
+                <button class="btn-add" onclick="addEmployeeField()">
+                    <i class="fas fa-plus"></i> Ajouter un champ
+                </button>
+                <button class="btn-remove" onclick="this.parentElement.remove()">
+                    <i class="fas fa-trash"></i> Supprimer ce champ
+                </button>
+            `;
+            container.appendChild(newField);
+        }
+        
+        // Update preview
+        updatePreviewBtn.addEventListener('click', updatePreview);
+        
+        function updatePreview() {
+            // Employer info
+            document.getElementById('previewEmployerName').textContent = 
+                document.getElementById('employerName').value || "SCM SARL";
+            
+            // Employer additional fields
+            const employerFields = document.querySelectorAll('#employerAdditionalFields .additional-field');
+            let employerHtml = '';
+            employerFields.forEach(field => {
+                const label = field.querySelector('.field-group input:first-child').value;
+                const value = field.querySelector('.field-group input:last-child').value;
+                if (label && value) {
+                    employerHtml += `<p>${label}: <span>${value}</span></p>`;
+                }
+            });
+            document.getElementById('previewEmployerAdditional').innerHTML = employerHtml;
+                
+            // Employee info
+            document.getElementById('previewEmployeeName').textContent = 
+                document.getElementById('employeeName').value || "[Nom complet du salarié]";
+            
+            // Employee additional fields
+            const employeeFields = document.querySelectorAll('#employeeAdditionalFields .additional-field');
+            let employeeHtml = '';
+            employeeFields.forEach(field => {
+                const label = field.querySelector('.field-group input:first-child').value;
+                const value = field.querySelector('.field-group input:last-child').value;
+                if (label && value) {
+                    employeeHtml += `<p>${label}: <span>${value}</span></p>`;
+                }
+            });
+            document.getElementById('previewEmployeeAdditional').innerHTML = employeeHtml;
+            
+            // Job details
+            const jobFunction = document.getElementById('jobFunction').value;
+            const workplace = document.getElementById('workplace').value;
+            
+            let jobHtml = '<div class="section-heading">1. Poste</div>';
+            if (jobFunction) {
+                jobHtml += `<p>Fonction : <span>${jobFunction}</span></p>`;
+            }
+            if (workplace) {
+                jobHtml += `<p>Lieu de travail : <span>${workplace}</span></p>`;
+            }
+            
+            // Additional lines for job
+            const jobInputs = document.querySelectorAll('#posteGroup .additional-line input');
+            jobInputs.forEach(input => {
+                if (input.value.trim() !== '') {
+                    jobHtml += `<p>${input.value}</p>`;
+                }
+            });
+            
+            document.getElementById('previewPoste').innerHTML = jobHtml;
+            
+            // Contract type
+            const contractTypeValue = contractType.value;
+            const previewCddBlock = document.getElementById('previewCddBlock');
+            const previewCdiBlock = document.getElementById('previewCdiBlock');
+            
+            if (contractTypeValue === 'CDD') {
+                previewCddBlock.style.display = 'block';
+                previewCdiBlock.style.display = 'none';
+                
+                const startDate = document.getElementById('cddStartDate').value;
+                const endDate = document.getElementById('cddEndDate').value;
+                
+                document.getElementById('previewCddStartDate').textContent = 
+                    startDate ? formatDate(startDate) : "[date]";
+                document.getElementById('previewCddEndDate').textContent = 
+                    endDate ? formatDate(endDate) : "[date]";
+            } else {
+                previewCddBlock.style.display = 'none';
+                previewCdiBlock.style.display = 'block';
+                
+                const startDate = document.getElementById('cdiStartDate').value;
+                document.getElementById('previewCdiStartDate').textContent = 
+                    startDate ? formatDate(startDate) : "[date]";
+            }
+            
+            // Salary
+            const salaryInputs = document.querySelectorAll('#salaireGroup input');
+            const salaryLines = Array.from(salaryInputs).map(input => input.value).filter(value => value.trim() !== '');
+            
+            let salaryHtml = '<div class="section-heading">3. Salaire</div>';
+            salaryLines.forEach(line => {
+                salaryHtml += `<p>${line}</p>`;
+            });
+            document.getElementById('previewSalaire').innerHTML = salaryHtml;
+            
+            // Work hours
+            const hoursInputs = document.querySelectorAll('#horairesGroup input');
+            const hoursLines = Array.from(hoursInputs).map(input => input.value).filter(value => value.trim() !== '');
+            
+            let hoursHtml = '<div class="section-heading">4. Horaires</div>';
+            hoursLines.forEach(line => {
+                hoursHtml += `<p>${line}</p>`;
+            });
+            document.getElementById('previewHoraires').innerHTML = hoursHtml;
+            
+            // Engagement
+            const engagementInputs = document.querySelectorAll('#engagementGroup input');
+            const engagementLines = Array.from(engagementInputs).map(input => input.value).filter(value => value.trim() !== '');
+            
+            let engagementHtml = '<div class="section-heading">5. Engagement</div>';
+            engagementLines.forEach(line => {
+                engagementHtml += `<p>${line}</p>`;
+            });
+            document.getElementById('previewEngagement').innerHTML = engagementHtml;
+            
+            // Rupture
+            const ruptureInputs = document.querySelectorAll('#ruptureGroup input');
+            const ruptureLines = Array.from(ruptureInputs).map(input => input.value).filter(value => value.trim() !== '');
+            
+            let ruptureHtml = '<div class="section-heading">6. Rupture</div>';
+            ruptureLines.forEach(line => {
+                ruptureHtml += `<p>${line}</p>`;
+            });
+            document.getElementById('previewRupture').innerHTML = ruptureHtml;
+            
+            // Contract date
+            const contractDate = document.getElementById('contractDate').value;
+            document.getElementById('previewContractDate').textContent = 
+                contractDate ? formatDate(contractDate) : formattedDate;
+            
+            alert("Aperçu mis à jour avec succès !");
+        }
+        
+        // Download PDF
+        downloadPdfBtn.addEventListener('click', generatePdf);
+        
+        function generatePdf() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const element = document.getElementById('contractPreview');
+            
+            // Use exact A4 dimensions in pixels (96dpi)
+            const width = 210 * 3.78; // 210mm to pixels
+            const height = 297 * 3.78; // 297mm to pixels
+            
+            html2canvas(element, {
+                scale: 1,
+                width: width,
+                height: height,
+                windowWidth: width,
+                windowHeight: height,
+                useCORS: true,
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: 0
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                // Add image to PDF at exact A4 size
+                pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+                pdf.save('contrat-travail-SCM-SARL.pdf');
+            });
+        }
+        
+        // Helper functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+        
+        // Remove section function
+        function removeSection(formSectionId, previewSectionId) {
+            if (confirm("Voulez-vous vraiment supprimer cette section ?")) {
+                // Hide the form section
+                document.getElementById(formSectionId).style.display = 'none';
+                // Hide the preview section
+                document.getElementById(previewSectionId).style.display = 'none';
+                // Update the preview to reflect changes
+                updatePreview();
+            }
+        }
+        
+        // Initialize
+        contractType.dispatchEvent(new Event('change'));
+        updatePreview();
+    </script>
+</body>
+</html>

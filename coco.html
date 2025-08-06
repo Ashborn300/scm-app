@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Contrats</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #005c29;
+            --secondary-color: #f0b400;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #003d1c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        header h1 {
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .app-description {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .app-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .form-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .preview-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-color);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.95rem;
+        }
+        
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, 
+        .form-group textarea:focus, 
+        .form-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 92, 41, 0.1);
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .upload-container {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            min-height: 100px;
+            background: #f8f9fa;
+        }
+        
+        .upload-container:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 92, 41, 0.03);
+        }
+        
+        .upload-container i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        .upload-container p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .upload-preview {
+            max-width: 100%;
+            max-height: 120px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 3px;
+        }
+        
+        .signature-pad {
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 6px;
+            height: 130px;
+            margin-top: 8px;
+            cursor: crosshair;
+            position: relative;
+        }
+        
+        .signature-clear {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            z-index: 10;
+        }
+        
+        .signature-clear:hover {
+            background: #00421e;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            flex: 1;
+        }
+        
+        .btn-primary:hover {
+            background: #00421e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: var(--dark-color);
+            flex: 1;
+        }
+        
+        .btn-secondary:hover {
+            background: #d69e00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .contract-preview {
+            flex: 1;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+            min-height: 700px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .contract-header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo-preview {
+            max-height: 90px;
+            margin-bottom: 8px;
+        }
+        
+        .contract-title {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            margin: 6px 0;
+        }
+        
+        .contract-subtitle {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 3px;
+            font-size: 0.9rem;
+        }
+        
+        .contract-content {
+            margin-top: 12px;
+            flex: 1;
+        }
+        
+        .article {
+            margin-bottom: 10px;
+        }
+        
+        .article-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 0.92rem;
+        }
+        
+        .signature-section {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .signature-section {
+                flex-direction: column;
+                gap: 30px;
+            }
+        }
+        
+        .signature-box {
+            width: 250px;
+        }
+        
+        .company-signature {
+            text-align: center;
+        }
+        
+        .signature-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+            font-size: 0.85rem;
+        }
+        
+        .signature-preview {
+            height: 70px;
+            border: 1px dashed #ccc;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+        
+        .signature-img {
+            max-width: 100%;
+            max-height: 70px;
+        }
+        
+        .seal-preview {
+            max-width: 105px;
+            margin-top: 6px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.75rem;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            display: none;
+            font-size: 0.9rem;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .articles-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .add-article-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .add-article-btn:hover {
+            background: #00421e;
+        }
+        
+        .company-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .compact-layout .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .compact-layout .form-group textarea {
+            min-height: 70px;
+        }
+        
+        @media (max-width: 768px) {
+            .app-content {
+                flex-direction: column;
+            }
+            
+            .signature-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .signature-box {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            
+            .contract-title {
+                font-size: 1.2rem;
+            }
+            
+            .company-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .compact-layout .form-group {
+                margin-bottom: 10px;
+            }
+
+            .form-section, .preview-section {
+                padding: 15px;
+            }
+
+            .section-title {
+                font-size: 1.3rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .seal-container {
+                margin-top: 10px;
+                text-align: center;
+            }
+        }
+
+        .seal-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        /* Spécifique pour la prévisualisation PDF */
+        .contract-preview.pdf-mode {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            box-sizing: border-box;
+            font-size: 11pt;
+            line-height: 1.5;
+            margin: 0 auto;
+        }
+        
+        .contract-preview.pdf-mode .contract-title {
+            font-size: 16pt;
+        }
+        
+        .contract-preview.pdf-mode .article-title {
+            font-size: 12pt;
+        }
+        
+        .contract-preview.pdf-mode .signature-preview {
+            height: 60px;
+        }
+        
+        .contract-preview.pdf-mode .logo-preview {
+            max-height: 75px;
+        }
+        
+        .contract-preview.pdf-mode .seal-preview {
+            max-width: 90px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="https://app.scmsarl.site/" class="back-btn" style="display: inline-block; margin-bottom: 20px; padding: 10px 20px; background-color: #005c29; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">RETOUR</a>
+        <header>
+            <h1>SCM SARL - Générateur de Contrats</h1>
+            <p class="app-description">Outil professionnel pour créer des contrats de construction et travaux pour les entreprises en RDC</p>
+        </header>
+        
+        <div class="alert alert-success" id="success-alert">
+            Le contrat a été généré avec succès ! Téléchargement du PDF en cours...
+        </div>
+        
+        <div class="app-content">
+            <div class="form-section compact-layout">
+                <h2 class="section-title"><i>📝</i> Détails du Contrat</h2>
+                
+                <div class="form-group">
+                    <label for="company-name">Nom de l'Entreprise</label>
+                    <input type="text" id="company-name" value="SCM SARL">
+                </div>
+                
+                <div class="form-group">
+                    <label for="company-address">Adresse de l'Entreprise</label>
+                    <input type="text" id="company-address" value="123 Avenue des Entrepreneurs, Kinshasa, RDC">
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-name">Nom du Client</label>
+                    <input type="text" id="client-name" placeholder="Entrez le nom complet du client">
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-address">Adresse du Client</label>
+                    <input type="text" id="client-address" placeholder="Entrez l'adresse du client">
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-description">Description des Travaux</label>
+                    <textarea id="project-description" placeholder="Décrivez en détail les travaux à effectuer..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-location">Lieu des Travaux</label>
+                    <input type="text" id="project-location" placeholder="Adresse exacte où les travaux seront effectués">
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-duration">Durée des Travaux</label>
+                    <input type="text" id="project-duration" placeholder="Ex: 90 jours">
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-cost">Coût Total</label>
+                    <input type="text" id="project-cost" placeholder="Montant en USD ou CDF">
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment-terms">Modalités de Paiement</label>
+                    <textarea id="payment-terms" placeholder="Décrivez les modalités de paiement..."></textarea>
+                </div>
+                
+                <h2 class="section-title"><i>⚙️</i> Contenu du Contrat</h2>
+                
+                <div class="articles-controls">
+                    <button class="add-article-btn" id="add-article">
+                        <span>+</span> Ajouter un Article
+                    </button>
+                </div>
+                
+                <div id="articles-container">
+                    <!-- Articles will be added here dynamically -->
+                </div>
+                
+                <h2 class="section-title"><i>🎨</i> Personnalisation</h2>
+                
+                <div class="form-group">
+                    <label for="company-representative">Représentant de l'Entreprise</label>
+                    <input type="text" id="company-representative" value="La Direction de l'entreprise">
+                </div>
+                
+                <div class="form-group">
+                    <label>Logo de l'Entreprise</label>
+                    <div class="file-upload">
+                        <div class="upload-container" id="logo-upload">
+                            <i>📷</i>
+                            <p>Cliquez pour importer votre logo</p>
+                            <p><small>Formats acceptés: JPG, PNG (max 2MB)</small></p>
+                            <input type="file" id="logo-input" accept="image/*" style="display: none">
+                        </div>
+                        <img id="logo-preview" class="upload-preview">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Sceau de l'Entreprise</label>
+                    <div class="file-upload">
+                        <div class="upload-container" id="seal-upload">
+                            <i>🖼️</i>
+                            <p>Cliquez pour importer votre sceau</p>
+                            <p><small>Formats acceptés: JPG, PNG (max 2MB)</small></p>
+                            <input type="file" id="seal-input" accept="image/*" style="display: none">
+                        </div>
+                        <img id="seal-preview" class="upload-preview">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Signature du Client</label>
+                    <div class="signature-pad" id="signature-pad">
+                        <button class="signature-clear" id="clear-signature">Effacer</button>
+                        <canvas id="signature-canvas"></canvas>
+                    </div>
+                </div>
+                
+                <h2 class="section-title"><i>📱</i> Informations de l'Entreprise</h2>
+                
+                <div class="company-info">
+                    <div class="form-group">
+                        <label for="company-email">Email</label>
+                        <input type="email" id="company-email" value="Solutiondeconstructionmodernes@gmail.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="company-phone">Téléphone</label>
+                        <input type="tel" id="company-phone" value="+243 814 644 847">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="company-rccm">RCCM</label>
+                        <input type="text" id="company-rccm" value="CD/KNM/RCCM24-B-01256">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="company-tax">Numéro d'Impôt</label>
+                        <input type="text" id="company-tax" value="A2442 173S">
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary" id="generate-pdf">
+                        <span>Générer PDF</span>
+                    </button>
+                    <button class="btn btn-secondary" id="reset-form">
+                        <span>Réinitialiser</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h2 class="section-title"><i>👁️</i> Aperçu du Contrat</h2>
+                <div class="contract-preview" id="contract-preview">
+                    <div class="contract-header">
+                        <img id="contract-logo" class="logo-preview" src="" alt="Logo de l'entreprise">
+                        <h1 class="contract-title">CONTRAT DE CONSTRUCTION ET TRAVAUX</h1>
+                        <p class="contract-subtitle">Entreprise: <span id="preview-company-name">SCM SARL</span></p>
+                        <p>Enregistré sous le numéro: RC/KD/2023/A/12345</p>
+                    </div>
+                    
+                    <div class="contract-content">
+                        <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+                        
+                        <p>La Société <strong><span id="preview-company-name2">SCM SARL</span></strong>, 
+                        dont le siège social est situé à <span id="preview-company-address">123 Avenue des Entrepreneurs, Kinshasa, RDC</span>,
+                        représentée par <span id="preview-representative">La Direction de l'entreprise</span>.</p>
+                        
+                        <p style="margin-top: 10px;"><strong>D'UNE PART,</strong></p>
+                        
+                        <p>ET</p>
+                        
+                        <p>Monsieur/Madame <strong><span id="preview-client-name">[Nom du Client]</span></strong>, 
+                        demeurant à <span id="preview-client-address">[Adresse du Client]</span>,
+                        ci-après dénommé "le Client".</p>
+                        
+                        <p style="margin-top: 10px;"><strong>D'AUTRE PART,</strong></p>
+                        
+                        <p>IL A ÉTÉ CONVENU CE QUI SUIT :</p>
+                        
+                        <div id="preview-articles">
+                            <div class="article">
+                                <div class="article-title">Article 1 - Objet</div>
+                                <p>La présente convention a pour objet la réalisation par l'Entreprise des travaux suivants :</p>
+                                <p id="preview-project-description">[Description détaillée des travaux à effectuer]</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 2 - Lieu d'exécution</div>
+                                <p>Les travaux seront exécutés à l'adresse suivante :</p>
+                                <p id="preview-project-location">[Adresse exacte du chantier]</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 3 - Durée des travaux</div>
+                                <p>La durée prévue pour l'exécution des travaux est de <span id="preview-project-duration">[nombre] jours</span> à compter de la date de signature du présent contrat.</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 4 - Prix et modalités de paiement</div>
+                                <p>Le montant total des travaux s'élève à la somme de <span id="preview-project-cost">[montant]</span> (en toutes lettres).</p>
+                                <p>Modalités de paiement :</p>
+                                <p id="preview-payment-terms">[Détail des échéances et modalités de paiement]</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 5 - Obligations des parties</div>
+                                <p>L'Entreprise s'engage à réaliser les travaux conformément aux règles de l'art et aux normes en vigueur en République Démocratique du Congo.</p>
+                                <p>Le Client s'engage à faciliter l'accès au chantier et à régler les factures selon les modalités convenues.</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 6 - Résiliation</div>
+                                <p>En cas de manquement grave de l'une des parties, le présent contrat pourra être résilié après mise en demeure restée sans effet.</p>
+                            </div>
+                            
+                            <div class="article">
+                                <div class="article-title">Article 7 - Loi applicable et juridiction</div>
+                                <p>Le présent contrat est régi par la loi congolaise. Tout litige sera soumis aux tribunaux de Kinshasa.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="signature-section">
+                            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; width: 100%;">
+                                <div class="signature-box client-signature" style="width: 48%;">
+                                    <span class="signature-label">Pour le Client</span>
+                                    <div class="signature-preview">
+                                        <canvas id="preview-signature" width="250" height="80"></canvas>
+                                    </div>
+                                    <p>Nom : <span id="preview-client-name2">[Nom du Client]</span></p>
+                                    <p>Date : <span id="signature-date">__/__/____</span></p>
+                                </div>
+                                
+                                <div class="signature-box company-signature" style="width: 48%;">
+                                    <span class="signature-label">Pour SCM SARL</span>
+                                    <p id="preview-representative-name">La Direction de l'entreprise</p>
+                                    <p>Date : <span id="contract-date">__/__/____</span></p>
+                                    <div class="seal-container" style="margin-top: 10px; text-align: center;">
+                                        <img id="preview-seal" class="seal-preview" src="" alt="Sceau de l'entreprise">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>SCM SARL - Société de Construction et de Maçonnerie</p>
+                        <p>Tél: <span id="preview-phone">+243 814 644 847</span> | Email: <span id="preview-email">Solutiondeconstructionmodernes@gmail.com</span></p>
+                        <p>RCCM: <span id="preview-rccm">CD/KNM/RCCM24-B-01256</span> | N° Impôt: <span id="preview-tax">A2442 173S</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements du DOM
+            const logoInput = document.getElementById('logo-input');
+            const logoUpload = document.getElementById('logo-upload');
+            const logoPreview = document.getElementById('logo-preview');
+            const contractLogo = document.getElementById('contract-logo');
+            
+            const sealInput = document.getElementById('seal-input');
+            const sealUpload = document.getElementById('seal-upload');
+            const sealPreview = document.getElementById('seal-preview');
+            const previewSeal = document.getElementById('preview-seal');
+            
+            const signatureCanvas = document.getElementById('signature-canvas');
+            const clearSignatureBtn = document.getElementById('clear-signature');
+            const previewSignature = document.getElementById('preview-signature');
+            
+            const generatePdfBtn = document.getElementById('generate-pdf');
+            const resetFormBtn = document.getElementById('reset-form');
+            const successAlert = document.getElementById('success-alert');
+            const addArticleBtn = document.getElementById('add-article');
+            const articlesContainer = document.getElementById('articles-container');
+            const previewArticles = document.getElementById('preview-articles');
+            
+            const companyRepresentative = document.getElementById('company-representative');
+            const companyEmail = document.getElementById('company-email');
+            const companyPhone = document.getElementById('company-phone');
+            const companyRccm = document.getElementById('company-rccm');
+            const companyTax = document.getElementById('company-tax');
+            
+            // Contexte du canvas de signature
+            const ctx = signatureCanvas.getContext('2d');
+            const previewCtx = previewSignature.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            
+            // Initialiser le canvas
+            function initCanvas() {
+                signatureCanvas.width = signatureCanvas.offsetWidth;
+                signatureCanvas.height = signatureCanvas.offsetHeight;
+                
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                
+                // Événements du canvas
+                signatureCanvas.addEventListener('mousedown', startDrawing);
+                signatureCanvas.addEventListener('mousemove', draw);
+                signatureCanvas.addEventListener('mouseup', stopDrawing);
+                signatureCanvas.addEventListener('mouseout', stopDrawing);
+                
+                // Événements tactiles pour mobile
+                signatureCanvas.addEventListener('touchstart', handleTouchStart);
+                signatureCanvas.addEventListener('touchmove', handleTouchMove);
+                signatureCanvas.addEventListener('touchend', stopDrawing);
+            }
+            
+            // Fonctions de dessin
+            function startDrawing(e) {
+                isDrawing = true;
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+                
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+                
+                // Mettre à jour l'aperçu
+                updateSignaturePreview();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            // Gestion des événements tactiles
+            function handleTouchStart(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = signatureCanvas.getBoundingClientRect();
+                const offsetX = touch.clientX - rect.left;
+                const offsetY = touch.clientY - rect.top;
+                
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    offsetX: offsetX,
+                    offsetY: offsetY
+                });
+                signatureCanvas.dispatchEvent(mouseEvent);
+            }
+            
+            function handleTouchMove(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = signatureCanvas.getBoundingClientRect();
+                const offsetX = touch.clientX - rect.left;
+                const offsetY = touch.clientY - rect.top;
+                
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    offsetX: offsetX,
+                    offsetY: offsetY
+                });
+                signatureCanvas.dispatchEvent(mouseEvent);
+            }
+            
+            // Effacer la signature
+            clearSignatureBtn.addEventListener('click', function() {
+                ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+                previewCtx.clearRect(0, 0, previewSignature.width, previewSignature.height);
+            });
+            
+            // Mettre à jour l'aperçu de la signature
+            function updateSignaturePreview() {
+                previewCtx.clearRect(0, 0, previewSignature.width, previewSignature.height);
+                previewCtx.drawImage(signatureCanvas, 0, 0, previewSignature.width, previewSignature.height);
+            }
+            
+            // Gestion de l'upload du logo
+            logoUpload.addEventListener('click', function() {
+                logoInput.click();
+            });
+            
+            logoInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        logoPreview.src = event.target.result;
+                        logoPreview.style.display = 'block';
+                        
+                        contractLogo.src = event.target.result;
+                        contractLogo.style.display = 'block';
+                    }
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // Gestion de l'upload du sceau
+            sealUpload.addEventListener('click', function() {
+                sealInput.click();
+            });
+            
+            sealInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        sealPreview.src = event.target.result;
+                        sealPreview.style.display = 'block';
+                        
+                        previewSeal.src = event.target.result;
+                        previewSeal.style.display = 'block';
+                    }
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // Gestion des articles
+            let articleCount = 7; // Compteur pour les nouveaux articles
+            
+            function addArticle(title = '', content = '') {
+                const articleId = `article-${Date.now()}`;
+                
+                // Créer l'élément dans le formulaire
+                const articleDiv = document.createElement('div');
+                articleDiv.className = 'form-group article-form';
+                articleDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label>Titre de l'Article</label>
+                        <button class="delete-article" data-id="${articleId}">Supprimer</button>
+                    </div>
+                    <input type="text" class="article-title-input" value="${title}" placeholder="Titre de l'article">
+                    <textarea class="article-content-input" placeholder="Contenu de l'article..." style="margin-top: 10px;">${content}</textarea>
+                `;
+                articlesContainer.appendChild(articleDiv);
+                
+                // Ajouter l'élément dans l'aperçu
+                const previewArticle = document.createElement('div');
+                previewArticle.className = 'article';
+                previewArticle.id = articleId;
+                previewArticle.innerHTML = `
+                    <div class="article-title">${title || 'Nouvel Article'}</div>
+                    <p>${content || 'Contenu de l\'article...'}</p>
+                `;
+                previewArticles.appendChild(previewArticle);
+                
+                // Ajouter l'événement de suppression
+                const deleteButton = articleDiv.querySelector('.delete-article');
+                deleteButton.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    articleDiv.remove();
+                    previewArticle.remove();
+                });
+                
+                // Ajouter les événements de mise à jour
+                const titleInput = articleDiv.querySelector('.article-title-input');
+                const contentInput = articleDiv.querySelector('.article-content-input');
+                
+                titleInput.addEventListener('input', function() {
+                    previewArticle.querySelector('.article-title').textContent = this.value;
+                });
+                
+                contentInput.addEventListener('input', function() {
+                    previewArticle.querySelector('p').textContent = this.value;
+                });
+            }
+            
+            addArticleBtn.addEventListener('click', function() {
+                articleCount++;
+                addArticle(`Article ${articleCount} - Nouveau`, 'Contenu du nouvel article...');
+            });
+            
+            // Mise à jour de l'aperçu en temps réel
+            const inputFields = document.querySelectorAll('input, textarea');
+            inputFields.forEach(field => {
+                field.addEventListener('input', updatePreview);
+            });
+            
+            companyRepresentative.addEventListener('input', function() {
+                document.getElementById('preview-representative').textContent = this.value;
+                document.getElementById('preview-representative-name').textContent = this.value;
+            });
+            
+            companyEmail.addEventListener('input', function() {
+                document.getElementById('preview-email').textContent = this.value;
+            });
+            
+            companyPhone.addEventListener('input', function() {
+                document.getElementById('preview-phone').textContent = this.value;
+            });
+            
+            companyRccm.addEventListener('input', function() {
+                document.getElementById('preview-rccm').textContent = this.value;
+            });
+            
+            companyTax.addEventListener('input', function() {
+                document.getElementById('preview-tax').textContent = this.value;
+            });
+            
+            function updatePreview() {
+                document.getElementById('preview-company-name').textContent = document.getElementById('company-name').value;
+                document.getElementById('preview-company-name2').textContent = document.getElementById('company-name').value;
+                document.getElementById('preview-company-address').textContent = document.getElementById('company-address').value;
+                document.getElementById('preview-client-name').textContent = document.getElementById('client-name').value;
+                document.getElementById('preview-client-name2').textContent = document.getElementById('client-name').value;
+                document.getElementById('preview-client-address').textContent = document.getElementById('client-address').value;
+                document.getElementById('preview-project-description').textContent = document.getElementById('project-description').value;
+                document.getElementById('preview-project-location').textContent = document.getElementById('project-location').value;
+                document.getElementById('preview-project-duration').textContent = document.getElementById('project-duration').value;
+                document.getElementById('preview-project-cost').textContent = document.getElementById('project-cost').value;
+                document.getElementById('preview-payment-terms').textContent = document.getElementById('payment-terms').value;
+                
+                // Mettre à jour la date
+                const today = new Date();
+                document.getElementById('signature-date').textContent = today.toLocaleDateString('fr-FR');
+                document.getElementById('contract-date').textContent = today.toLocaleDateString('fr-FR');
+            }
+            
+            // Générer le PDF
+            generatePdfBtn.addEventListener('click', function() {
+                // Afficher l'alerte de succès
+                successAlert.style.display = 'block';
+                
+                // Créer un clone pour la capture PDF
+                const contractElement = document.getElementById('contract-preview');
+                const clone = contractElement.cloneNode(true);
+                clone.id = 'contract-preview-pdf';
+                clone.classList.add('pdf-mode');
+                
+                // Positionner le clone hors écran
+                clone.style.position = 'absolute';
+                clone.style.left = '-9999px';
+                clone.style.top = '0';
+                clone.style.width = '210mm';
+                clone.style.minHeight = '297mm';
+                clone.style.padding = '15mm';
+                clone.style.boxSizing = 'border-box';
+                clone.style.zIndex = '-1000';
+                
+                document.body.appendChild(clone);
+                
+                // Copier le contenu des canvas de signature
+                const originalSignatureCanvas = signatureCanvas;
+                const cloneSignatureCanvas = clone.querySelector('#preview-signature');
+                if (cloneSignatureCanvas) {
+                    const cloneCtx = cloneSignatureCanvas.getContext('2d');
+                    cloneCtx.drawImage(originalSignatureCanvas, 0, 0);
+                }
+                
+                // Copier les images
+                if (contractLogo.src) {
+                    clone.querySelector('#contract-logo').src = contractLogo.src;
+                }
+                if (previewSeal.src) {
+                    clone.querySelector('#preview-seal').src = previewSeal.src;
+                }
+                
+                // Générer le PDF après un court délai pour permettre le rendu
+                setTimeout(() => {
+                    html2canvas(clone, {
+                        scale: 3,
+                        useCORS: true,
+                        logging: false,
+                        width: clone.offsetWidth,
+                        height: clone.offsetHeight
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const pdf = new jspdf.jsPDF({
+                            orientation: 'portrait',
+                            unit: 'mm',
+                            format: 'a4'
+                        });
+                        
+                        // Ajouter l'image au PDF en pleine page
+                        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+                        
+                        // Télécharger le PDF
+                        pdf.save(`Contrat-SCM-${document.getElementById('client-name').value || 'Client'}.pdf`);
+                        
+                        // Supprimer le clone
+                        document.body.removeChild(clone);
+                        
+                        // Masquer l'alerte après le téléchargement
+                        setTimeout(() => {
+                            successAlert.style.display = 'none';
+                        }, 3000);
+                    });
+                }, 500);
+            });
+            
+            // Réinitialiser le formulaire
+            resetFormBtn.addEventListener('click', function() {
+                // Réinitialiser les champs texte
+                document.getElementById('company-name').value = 'SCM SARL';
+                document.getElementById('company-address').value = '123 Avenue des Entrepreneurs, Kinshasa, RDC';
+                document.getElementById('client-name').value = '';
+                document.getElementById('client-address').value = '';
+                document.getElementById('project-description').value = '';
+                document.getElementById('project-location').value = '';
+                document.getElementById('project-duration').value = '';
+                document.getElementById('project-cost').value = '';
+                document.getElementById('payment-terms').value = '';
+                document.getElementById('company-representative').value = 'La Direction de l\'entreprise';
+                document.getElementById('company-email').value = 'Solutiondeconstructionmodernes@gmail.com';
+                document.getElementById('company-phone').value = '+243 814 644 847';
+                document.getElementById('company-rccm').value = 'CD/KNM/RCCM24-B-01256';
+                document.getElementById('company-tax').value = 'A2442 173S';
+                
+                // Réinitialiser les images
+                logoPreview.src = '';
+                logoPreview.style.display = 'none';
+                contractLogo.src = '';
+                contractLogo.style.display = 'none';
+                
+                sealPreview.src = '';
+                sealPreview.style.display = 'none';
+                previewSeal.src = '';
+                previewSeal.style.display = 'none';
+                
+                // Réinitialiser la signature
+                ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+                previewCtx.clearRect(0, 0, previewSignature.width, previewSignature.height);
+                
+                // Réinitialiser les articles
+                articlesContainer.innerHTML = '';
+                previewArticles.innerHTML = '';
+                articleCount = 7;
+                
+                // Recréer les articles par défaut
+                const defaultArticles = [
+                    {title: 'Article 1 - Objet', content: 'La présente convention a pour objet la réalisation par l\'Entreprise des travaux suivants :'},
+                    {title: 'Article 2 - Lieu d\'exécution', content: 'Les travaux seront exécutés à l\'adresse suivante :'},
+                    {title: 'Article 3 - Durée des travaux', content: 'La durée prévue pour l\'exécution des travaux est de [nombre] jours à compter de la date de signature du présent contrat.'},
+                    {title: 'Article 4 - Prix et modalités de paiement', content: 'Le montant total des travaux s\'élève à la somme de [montant] (en toutes lettres). Modalités de paiement :'},
+                    {title: 'Article 5 - Obligations des parties', content: 'L\'Entreprise s\'engage à réaliser les travaux conformément aux règles de l\'art et aux normes en vigueur en République Démocratique du Congo. Le Client s\'engage à faciliter l\'accès au chantier et à régler les factures selon les modalités convenues.'},
+                    {title: 'Article 6 - Résiliation', content: 'En cas de manquement grave de l\'une des parties, le présent contrat pourra être résilié après mise en demeure restée sans effet.'},
+                    {title: 'Article 7 - Loi applicable et juridiction', content: 'Le présent contrat est régi par la loi congolaise. Tout litige sera soumis aux tribunaux de Kinshasa.'}
+                ];
+                
+                defaultArticles.forEach(article => {
+                    addArticle(article.title, article.content);
+                });
+                
+                // Mettre à jour l'aperçu
+                updatePreview();
+            });
+            
+            // Initialiser l'application
+            initCanvas();
+            updatePreview();
+            
+            // Ajouter les articles par défaut au chargement
+            resetFormBtn.click();
+        });
+    </script>
+</body>
+</html>

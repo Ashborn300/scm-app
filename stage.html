@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Convention de Stage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .section-container {
+            transition: all 0.3s ease;
+        }
+        .section-container:hover {
+            transform: translateY(-2px);
+        }
+        .add-field-btn {
+            transition: all 0.2s ease;
+        }
+        .add-field-btn:hover {
+            transform: scale(1.05);
+        }
+        #documentPreview {
+            background-color: white;
+            min-height: 297mm;
+            width: 210mm;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #documentPreview, #documentPreview * {
+                visibility: visible;
+            }
+            #documentPreview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-2">
+        <a href="https://app.scmsarl.site/" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mb-6 transition">
+            <i class="fas fa-arrow-left mr-2"></i>RETOUR
+        </a>
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-800">SCM SARL</h1>
+            <h2 class="text-xl text-blue-600 mt-2">Générateur de Convention de Stage</h2>
+            <p class="text-gray-600 mt-4">Générez facilement vos documents d'admission de stage personnalisés</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Formulaire -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Section Logo -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-image mr-2"></i>Logo de l'entreprise
+                        </h3>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div id="logoPreview" class="mb-4 border-2 border-dashed border-gray-300 p-4 rounded-lg w-48 h-32 flex items-center justify-center">
+                            <p class="text-gray-400 text-sm">Aucun logo sélectionné</p>
+                        </div>
+                        <input type="file" id="logoUpload" accept="image/*" class="hidden">
+                        <button onclick="document.getElementById('logoUpload').click()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition">
+                            <i class="fas fa-upload mr-2"></i>Choisir un logo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section Entreprise -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-building mr-2"></i>Informations de l'entreprise
+                        </h3>
+                        <button onclick="addField('entrepriseFields')" class="add-field-btn bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i>Ajouter
+                        </button>
+                    </div>
+                    <div id="entrepriseFields">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom de l'entreprise</label>
+                                <input type="text" value="SCM SARL" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                <input type="text" value="123 Rue des Entreprises" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ville</label>
+                                <input type="text" value="75001 Paris" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                <input type="text" value="01 23 45 67 89" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">SIRET</label>
+                                <input type="text" value="123 456 789 00010" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Représentant</label>
+                                <input type="text" value="M. Jean Dupont" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fonction</label>
+                                <input type="text" value="Directeur Général" class="entreprise-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Stagiaire -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-user-graduate mr-2"></i>Informations du stagiaire
+                        </h3>
+                        <button onclick="addField('stagiaireFields')" class="add-field-btn bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i>Ajouter
+                        </button>
+                    </div>
+                    <div id="stagiaireFields">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                                <input type="text" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                                <input type="text" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label>
+                                <input type="date" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                <input type="text" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                <input type="text" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" class="stagiaire-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Stage -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-briefcase mr-2"></i>Informations du stage
+                        </h3>
+                        <button onclick="addField('stageFields')" class="add-field-btn bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i>Ajouter
+                        </button>
+                    </div>
+                    <div id="stageFields">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date de début</label>
+                                <input type="date" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date de fin</label>
+                                <input type="date" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Durée (jours)</label>
+                                <input type="number" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Service d'accueil</label>
+                                <input type="text" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sujet/Mission</label>
+                                <textarea class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tuteur entreprise</label>
+                                <input type="text" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fonction tuteur</label>
+                                <input type="text" class="stage-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Ecole -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-school mr-2"></i>Informations de l'établissement
+                        </h3>
+                        <button onclick="addField('ecoleFields')" class="add-field-btn bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i>Ajouter
+                        </button>
+                    </div>
+                    <div id="ecoleFields">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom établissement</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Formation</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Niveau</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Responsable pédagogique</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                <input type="text" class="ecole-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Conditions -->
+                <div class="bg-white rounded-lg p-6 section-container custom-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-blue-700">
+                            <i class="fas fa-file-contract mr-2"></i>Conditions du stage
+                        </h3>
+                        <button onclick="addField('conditionsFields')" class="add-field-btn bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i>Ajouter
+                        </button>
+                    </div>
+                    <div id="conditionsFields">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gratification</label>
+                                <input type="text" value="Conformément à la réglementation en vigueur" class="conditions-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Horaires</label>
+                                <input type="text" value="Du lundi au vendredi, de 9h00 à 17h00" class="conditions-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Avantages</label>
+                                <input type="text" value="Tickets restaurant, remboursement 50% transport" class="conditions-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Assurance</label>
+                                <input type="text" value="Couverture par l'établissement scolaire" class="conditions-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Confidentialité</label>
+                                <textarea class="conditions-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" rows="3">Le stagiaire s'engage à respecter la confidentialité des informations auxquelles il aura accès pendant son stage.</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+                    <button onclick="generateDocument()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center justify-center">
+                        <i class="fas fa-file-pdf mr-2"></i>Générer le PDF
+                    </button>
+                    <button onclick="printDocument()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center justify-center">
+                        <i class="fas fa-print mr-2"></i>Imprimer
+                    </button>
+                    <button onclick="resetForm()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center justify-center">
+                        <i class="fas fa-trash-alt mr-2"></i>Effacer tout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aperçu -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg p-6 sticky top-4 custom-shadow">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-4">
+                        <i class="fas fa-eye mr-2"></i>Aperçu du document
+                    </h3>
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div id="documentPreview" class="p-8">
+                            <!-- Le contenu sera généré dynamiquement -->
+                        </div>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500">
+                        <p><i class="fas fa-info-circle mr-2"></i>L'aperçu montre une version simplifiée du document final.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialisation des variables
+        const { jsPDF } = window.jspdf;
+        let logoDataUrl = null;
+
+        // Gestion du téléchargement du logo
+        document.getElementById('logoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoDataUrl = e.target.result;
+                    document.getElementById('logoPreview').innerHTML = `<img src="${logoDataUrl}" class="max-h-full max-w-full" alt="Logo entreprise">`;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Mise à jour de l'aperçu en temps réel
+        document.querySelectorAll('input, textarea').forEach(element => {
+            element.addEventListener('input', updatePreview);
+        });
+
+        // Fonction pour ajouter des champs supplémentaires
+        function addField(sectionId) {
+            const section = document.getElementById(sectionId);
+            const fieldType = sectionId.replace('Fields', '');
+            
+            const newField = document.createElement('div');
+            newField.className = 'mt-4';
+            newField.innerHTML = `
+                <div class="flex items-center">
+                    <input type="text" placeholder="Nouveau champ" class="flex-grow ${fieldType}-field px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <button onclick="this.parentElement.parentElement.remove(); updatePreview();" class="ml-2 text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea placeholder="Description (optionnel)" class="mt-1 ${fieldType}-field w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+            `;
+            
+            section.appendChild(newField);
+        }
+
+        // Fonction pour mettre à jour l'aperçu
+        function updatePreview() {
+            const preview = document.getElementById('documentPreview');
+            
+            // Récupération des données
+            const entrepriseData = getSectionData('entreprise');
+            const stagiaireData = getSectionData('stagiaire');
+            const stageData = getSectionData('stage');
+            const ecoleData = getSectionData('ecole');
+            const conditionsData = getSectionData('conditions');
+            
+            // Construction du HTML de l'aperçu
+            let html = `
+                <div class="space-y-8">
+                    ${logoDataUrl ? `<div class="text-center"><img src="${logoDataUrl}" style="max-height: 80px;" alt="Logo entreprise"></div>` : ''}
+                    
+                    <h1 class="text-2xl font-bold text-center text-blue-800">CONVENTION DE STAGE</h1>
+                    
+                    <div class="text-center text-sm text-gray-600">
+                        Entre la société ${entrepriseData['Nom de l\'entreprise'] || 'SCM SARL'} et ${stagiaireData['Nom'] || 'le stagiaire'} ${stagiaireData['Prénom'] || ''}
+                    </div>
+                    
+                    <div class="border-t border-b border-gray-300 py-4">
+                        <h2 class="text-lg font-semibold text-blue-700">I. INFORMATIONS ENTREPRISE</h2>
+                        ${generateSectionHTML(entrepriseData)}
+                    </div>
+                    
+                    <div class="border-t border-b border-gray-300 py-4">
+                        <h2 class="text-lg font-semibold text-blue-700">II. INFORMATIONS STAGIAIRE</h2>
+                        ${generateSectionHTML(stagiaireData)}
+                    </div>
+                    
+                    <div class="border-t border-b border-gray-300 py-4">
+                        <h2 class="text-lg font-semibold text-blue-700">III. DESCRIPTION DU STAGE</h2>
+                        ${generateSectionHTML(stageData)}
+                    </div>
+                    
+                    <div class="border-t border-b border-gray-300 py-4">
+                        <h2 class="text-lg font-semibold text-blue-700">IV. INFORMATIONS ÉTABLISSEMENT</h2>
+                        ${generateSectionHTML(ecoleData)}
+                    </div>
+                    
+                    <div class="border-t border-b border-gray-300 py-4">
+                        <h2 class="text-lg font-semibold text-blue-700">V. CONDITIONS DU STAGE</h2>
+                        ${generateSectionHTML(conditionsData)}
+                    </div>
+                    
+                    <div class="flex justify-between mt-12">
+                        <div class="text-center">
+                            <div class="border-t border-gray-400 pt-1 w-32 mx-auto">${entrepriseData['Représentant'] || 'Représentant'}</div>
+                            <div class="text-xs mt-1">Pour ${entrepriseData['Nom de l\'entreprise'] || 'SCM SARL'}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-t border-gray-400 pt-1 w-32 mx-auto">${stagiaireData['Nom'] || 'Stagiaire'} ${stagiaireData['Prénom'] || ''}</div>
+                            <div class="text-xs mt-1">Le stagiaire</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-t border-gray-400 pt-1 w-32 mx-auto">${ecoleData['Responsable pédagogique'] || 'Responsable'}</div>
+                            <div class="text-xs mt-1">Pour l'établissement</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 mt-8 text-center">
+                        Document généré le ${new Date().toLocaleDateString('fr-FR')} par SCM SARL Stage Generator
+                    </div>
+                </div>
+            `;
+            
+            preview.innerHTML = html;
+        }
+
+        // Fonction pour générer le HTML d'une section
+        function generateSectionHTML(data) {
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">';
+            
+            for (const [key, value] of Object.entries(data)) {
+                if (value) {
+                    html += `
+                        <div>
+                            <span class="font-medium">${key} :</span>
+                            <span>${value}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        // Fonction pour récupérer les données d'une section
+        function getSectionData(section) {
+            const data = {};
+            const inputs = document.querySelectorAll(`.${section}-field`);
+            
+            inputs.forEach(input => {
+                if (input.type === 'file') return;
+                
+                const label = input.previousElementSibling?.textContent || 'Champ supplémentaire';
+                if (input.value) {
+                    data[label] = input.value;
+                }
+            });
+            
+            return data;
+        }
+
+        // Fonction pour générer le PDF
+        function generateDocument() {
+            updatePreview();
+            
+            // On attend que le rendu soit mis à jour
+            setTimeout(() => {
+                const element = document.getElementById('documentPreview');
+                
+                html2canvas(element, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const imgWidth = 210;
+                    const pageHeight = 297;
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    pdf.save(`Convention_Stage_${getSectionData('stagiaire')['Nom'] || 'SCM'}.pdf`);
+                });
+            }, 500);
+        }
+
+        // Fonction pour imprimer le document
+        function printDocument() {
+            updatePreview();
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+
+        // Fonction pour réinitialiser le formulaire
+        function resetForm() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les champs ?')) {
+                document.querySelectorAll('input, textarea').forEach(input => {
+                    if (input.type !== 'file') {
+                        input.value = '';
+                    }
+                });
+                document.getElementById('logoPreview').innerHTML = '<p class="text-gray-400 text-sm">Aucun logo sélectionné</p>';
+                logoDataUrl = null;
+                updatePreview();
+            }
+        }
+
+        // Initialisation de l'aperçu
+        updatePreview();
+    </script>
+</body>
+</html>

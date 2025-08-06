@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Fiches Projet - SCM SARL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a5a7a;
+            --secondary-color: #f0f0f0;
+            --accent-color: #f39c12;
+            --light-color: #ffffff;
+            --dark-color: #333333;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), #2c3e50);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+        
+        .section {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .form-section {
+            grid-column: 1;
+        }
+        
+        .preview-section {
+            grid-column: 2;
+        }
+        
+        @media (max-width: 900px) {
+            .form-section, .preview-section {
+                grid-column: 1;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(26, 90, 122, 0.2);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .image-upload {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .image-preview {
+            width: 100%;
+            max-width: 200px;
+            height: 100px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: #14455f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .btn-generate {
+            background-color: var(--accent-color);
+            margin-right: 10px;
+        }
+        
+        .btn-generate:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-reset {
+            background-color: #e74c3c;
+        }
+        
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-download {
+            background-color: #27ae60;
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+        }
+        
+        .btn-download:hover {
+            background-color: #219653;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        /* Preview styling */
+        #project-preview {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            min-height: 800px;
+            position: relative;
+            border: 1px solid #eee;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .preview-logo {
+            max-width: 150px;
+            max-height: 80px;
+        }
+        
+        .preview-title {
+            text-align: center;
+            font-size: 22px;
+            color: var(--primary-color);
+            flex-grow: 1;
+        }
+        
+        .preview-section {
+            margin-bottom: 25px;
+        }
+        
+        .preview-subtitle {
+            font-size: 14px;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            background-color: var(--secondary-color);
+            padding: 6px 10px;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .preview-item {
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .preview-label {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .signature-area {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            text-align: center;
+            width: 250px;
+        }
+        
+        .signature-preview {
+            height: 80px;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+        
+        .signature-preview img {
+            max-height: 100%;
+            max-width: 100%;
+        }
+        
+        .signature-label {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-planned {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .status-in-progress {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .status-completed {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .status-suspended {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .company-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Nouveau style pour l'en-tête */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .company-info {
+            text-align: right;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .fiscal-info {
+            font-weight: bold;
+        }
+        
+        .custom-field {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .custom-field input {
+            flex: 1;
+        }
+        
+        .custom-field-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        
+        .custom-field-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .custom-fields-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #ddd;
+        }
+        
+        .custom-field-preview {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Générateur de Fiches Projet</h1>
+            <p>SCM SARL - Création de fiches de description de projets de construction</p>
+        </header>
+        
+        <div class="form-section">
+            <div class="section">
+                <h2>Configuration de la fiche</h2>
+                
+                <form id="project-form">
+                    <div class="form-group">
+                        <label for="project-title">Titre du projet</label>
+                        <input type="text" id="project-title" placeholder="Ex: Construction d'un immeuble résidentiel R+3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-ref">Numéro de projet / Référence</label>
+                        <input type="text" id="project-ref" placeholder="Ex: PROJ-2023-025">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-location">Lieu / Adresse exacte du projet</label>
+                        <textarea id="project-location" placeholder="Adresse complète du projet"></textarea>
+                    </div>
+                    
+                    <div class="preview-grid">
+                        <div class="form-group">
+                            <label for="start-date">Date de début prévue</label>
+                            <input type="date" id="start-date">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="end-date">Date de fin estimée</label>
+                            <input type="date" id="end-date">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-duration">Durée totale estimée</label>
+                        <input type="text" id="project-duration" placeholder="Ex: 12 mois">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-status">Statut du projet</label>
+                        <select id="project-status">
+                            <option value="Planifié">Planifié</option>
+                            <option value="En cours">En cours</option>
+                            <option value="Terminé">Terminé</option>
+                            <option value="Suspendu">Suspendu</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Section pour les champs personnalisés -->
+                    <div class="form-group">
+                        <h3>Champs personnalisés</h3>
+                        <div id="custom-fields-container">
+                            <div class="custom-field">
+                                <input type="text" placeholder="Nom du champ" class="custom-field-name">
+                                <input type="text" placeholder="Valeur" class="custom-field-value">
+                                <button type="button" class="custom-field-btn remove-field">✕</button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-field-btn" class="btn btn-sm">+ Ajouter un champ</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Maîtrise d'ouvrage (Client)</h3>
+                        <div class="form-group">
+                            <label for="client-name">Nom du client ou de l'entreprise</label>
+                            <input type="text" id="client-name" placeholder="Nom du client">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="client-address">Adresse</label>
+                            <textarea id="client-address" placeholder="Adresse du client"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="client-contact">Contact (email / téléphone)</label>
+                            <input type="text" id="client-contact" placeholder="Ex: contact@client.com / +33 1 23 45 67 89">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Maîtrise d'œuvre (Concepteur/Architecte/Ingénieur)</h3>
+                        <div class="form-group">
+                            <label for="architect-name">Nom de l'architecte ou du bureau d'études</label>
+                            <input type="text" id="architect-name" placeholder="Nom de l'architecte">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="architect-contact">Coordonnées</label>
+                            <textarea id="architect-contact" placeholder="Coordonnées complètes"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="project-manager">Responsable technique / chef de projet</label>
+                            <input type="text" id="project-manager" placeholder="Nom du responsable">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Entreprise(s) exécutante(s)</h3>
+                        <div class="form-group">
+                            <label for="contractor-name">Nom de l'entreprise principale de construction</label>
+                            <input type="text" id="contractor-name" placeholder="Nom de l'entreprise">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subcontractors">Sous-traitants (le cas échéant)</label>
+                            <textarea id="subcontractors" placeholder="Liste des sous-traitants"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="site-manager">Responsable de chantier / conducteur de travaux</label>
+                            <input type="text" id="site-manager" placeholder="Nom du responsable">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contractor-contact">Coordonnées</label>
+                            <textarea id="contractor-contact" placeholder="Coordonnées complètes"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Description technique du projet</h3>
+                        <div class="form-group">
+                            <label for="project-nature">Nature du projet</label>
+                            <input type="text" id="project-nature" placeholder="Ex: construction neuve, rénovation, extension, aménagement…">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="building-type">Type de bâtiment / Infrastructure</label>
+                            <input type="text" id="building-type" placeholder="Ex: résidentiel, commercial, scolaire, route, pont…">
+                        </div>
+                        
+                        <div class="preview-grid">
+                            <div class="form-group">
+                                <label for="total-area">Surface totale (m²)</label>
+                                <input type="number" id="total-area" placeholder="Ex: 1200">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="floors-count">Nombre d'étages</label>
+                                <input type="number" id="floors-count" placeholder="Ex: 3">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="foundation">Fondations / Structure</label>
+                            <textarea id="foundation" placeholder="Description des fondations et de la structure"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="materials">Matériaux principaux utilisés</label>
+                            <textarea id="materials" placeholder="Liste des matériaux principaux"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="specifics">Spécificités techniques / Contraintes particulières</label>
+                            <textarea id="specifics" placeholder="Décrire les spécificités et contraintes"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Budget & Financement</h3>
+                        <div class="form-group">
+                            <label for="project-cost">Coût estimé du projet</label>
+                            <input type="text" id="project-cost" placeholder="Ex: 1 200 000 €">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="funding-type">Financement</label>
+                            <select id="funding-type">
+                                <option value="Public">Public</option>
+                                <option value="Privé">Privé</option>
+                                <option value="Mixte">Mixte</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Images</h3>
+                        <div class="image-upload">
+                            <div>
+                                <label for="logo-upload">Logo de l'entreprise</label>
+                                <input type="file" id="logo-upload" accept="image/*">
+                                <div class="image-preview" id="logo-preview">
+                                    <span>Aperçu du logo</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="signature-upload">Signature de la direction</label>
+                                <input type="file" id="signature-upload" accept="image/*">
+                                <div class="image-preview" id="signature-preview">
+                                    <span>Aperçu de la signature</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button type="button" id="generate-btn" class="btn btn-generate">Générer la Fiche</button>
+                        <button type="button" id="reset-btn" class="btn btn-reset">Réinitialiser</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="preview-section">
+            <div class="section">
+                <h2>Aperçu de la fiche</h2>
+                <div id="project-preview">
+                    <div class="header-top">
+                        <div class="preview-logo-container">
+                            <img id="preview-logo" class="preview-logo" src="" alt="Logo SCM SARL">
+                        </div>
+                        <div class="company-info">
+                            <div class="fiscal-info">RCCM : CD/KNM/RCCM24-B-01256</div>
+                            <div class="fiscal-info">IDNAT : 01-F4200-N55523N</div>
+                            <div class="fiscal-info">N°IMPÔT : A2442 173S</div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-title">Fiche de Description de Projet</div>
+                    
+                    <div class="company-name">SCM SARL</div>
+                    <div class="company-subtitle">Entreprise de Construction Générale</div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">🏗 Informations générales sur le projet</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Titre du projet:</span>
+                                <span id="preview-title">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Référence:</span>
+                                <span id="preview-ref">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Lieu:</span>
+                                <span id="preview-location">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Date de début:</span>
+                                <span id="preview-start-date">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Date de fin estimée:</span>
+                                <span id="preview-end-date">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Durée:</span>
+                                <span id="preview-duration">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Statut:</span>
+                                <span id="preview-status">-</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Conteneur pour les champs personnalisés -->
+                        <div id="custom-fields-preview"></div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">👨‍💼 Maîtrise d'ouvrage (Client)</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Client:</span>
+                                <span id="preview-client-name">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Adresse:</span>
+                                <span id="preview-client-address">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Contact:</span>
+                                <span id="preview-client-contact">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">🏢 Maîtrise d'œuvre</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Architecte/Bureau d'études:</span>
+                                <span id="preview-architect-name">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Coordonnées:</span>
+                                <span id="preview-architect-contact">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Responsable technique:</span>
+                                <span id="preview-project-manager">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">🔧 Entreprise(s) exécutante(s)</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Entreprise principale:</span>
+                                <span id="preview-contractor-name">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Sous-traitants:</span>
+                                <span id="preview-subcontractors">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Responsable chantier:</span>
+                                <span id="preview-site-manager">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Coordonnées:</span>
+                                <span id="preview-contractor-contact">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">📐 Description technique du projet</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Nature du projet:</span>
+                                <span id="preview-project-nature">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Type de bâtiment:</span>
+                                <span id="preview-building-type">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Surface totale:</span>
+                                <span id="preview-total-area">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Nombre d'étages:</span>
+                                <span id="preview-floors-count">-</span>
+                            </div>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Fondations/Structure:</span>
+                            <span id="preview-foundation">-</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Matériaux principaux:</span>
+                            <span id="preview-materials">-</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Spécificités techniques:</span>
+                            <span id="preview-specifics">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="preview-subtitle">💰 Budget & Financement</div>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <span class="preview-label">Coût estimé:</span>
+                                <span id="preview-project-cost">-</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">Financement:</span>
+                                <span id="preview-funding-type">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="signature-area">
+                        <div class="signature-label">Signature de la Direction</div>
+                        <div class="signature-preview" id="preview-signature-container">
+                            <img id="preview-signature" src="" alt="Signature">
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="download-btn" class="btn btn-download">Télécharger en PDF</button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>SCM SARL - Générateur de fiches de projet | &copy; 2023 Tous droits réservés</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // DOM Elements
+        const projectForm = document.getElementById('project-form');
+        const generateBtn = document.getElementById('generate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const logoUpload = document.getElementById('logo-upload');
+        const signatureUpload = document.getElementById('signature-upload');
+        const logoPreview = document.getElementById('logo-preview');
+        const signaturePreview = document.getElementById('signature-preview');
+        const addFieldBtn = document.getElementById('add-field-btn');
+        const customFieldsContainer = document.getElementById('custom-fields-container');
+        const customFieldsPreview = document.getElementById('custom-fields-preview');
+        
+        // Status badge classes
+        const statusBadges = {
+            'Planifié': 'status-planned',
+            'En cours': 'status-in-progress',
+            'Terminé': 'status-completed',
+            'Suspendu': 'status-suspended'
+        };
+        
+        // Event Listeners
+        generateBtn.addEventListener('click', generatePreview);
+        resetBtn.addEventListener('click', resetForm);
+        downloadBtn.addEventListener('click', downloadPDF);
+        logoUpload.addEventListener('change', handleImageUpload);
+        signatureUpload.addEventListener('change', handleImageUpload);
+        addFieldBtn.addEventListener('click', addCustomField);
+        
+        // Handle image uploads
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                
+                // Clear preview container
+                if (e.target.id === 'logo-upload') {
+                    logoPreview.innerHTML = '';
+                    logoPreview.appendChild(img);
+                    document.getElementById('preview-logo').src = event.target.result;
+                } else {
+                    signaturePreview.innerHTML = '';
+                    signaturePreview.appendChild(img);
+                    document.getElementById('preview-signature').src = event.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Add custom field
+        function addCustomField() {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'custom-field';
+            fieldDiv.innerHTML = `
+                <input type="text" placeholder="Nom du champ" class="custom-field-name">
+                <input type="text" placeholder="Valeur" class="custom-field-value">
+                <button type="button" class="custom-field-btn remove-field">✕</button>
+            `;
+            customFieldsContainer.appendChild(fieldDiv);
+            
+            // Add event listener to remove button
+            fieldDiv.querySelector('.remove-field').addEventListener('click', function() {
+                fieldDiv.remove();
+                generatePreview(); // Update preview
+            });
+        }
+        
+        // Generate preview function
+        function generatePreview() {
+            // Get all form values
+            const formData = {
+                title: document.getElementById('project-title').value || '-',
+                ref: document.getElementById('project-ref').value || '-',
+                location: document.getElementById('project-location').value || '-',
+                startDate: document.getElementById('start-date').value || '-',
+                endDate: document.getElementById('end-date').value || '-',
+                duration: document.getElementById('project-duration').value || '-',
+                status: document.getElementById('project-status').value || 'Planifié',
+                clientName: document.getElementById('client-name').value || '-',
+                clientAddress: document.getElementById('client-address').value || '-',
+                clientContact: document.getElementById('client-contact').value || '-',
+                architectName: document.getElementById('architect-name').value || '-',
+                architectContact: document.getElementById('architect-contact').value || '-',
+                projectManager: document.getElementById('project-manager').value || '-',
+                contractorName: document.getElementById('contractor-name').value || '-',
+                subcontractors: document.getElementById('subcontractors').value || '-',
+                siteManager: document.getElementById('site-manager').value || '-',
+                contractorContact: document.getElementById('contractor-contact').value || '-',
+                projectNature: document.getElementById('project-nature').value || '-',
+                buildingType: document.getElementById('building-type').value || '-',
+                totalArea: document.getElementById('total-area').value ? 
+                           document.getElementById('total-area').value + ' m²' : '-',
+                floorsCount: document.getElementById('floors-count').value || '-',
+                foundation: document.getElementById('foundation').value || '-',
+                materials: document.getElementById('materials').value || '-',
+                specifics: document.getElementById('specifics').value || '-',
+                projectCost: document.getElementById('project-cost').value || '-',
+                fundingType: document.getElementById('funding-type').value || '-'
+            };
+            
+            // Format dates
+            if (formData.startDate !== '-') {
+                formData.startDate = new Date(formData.startDate).toLocaleDateString('fr-FR');
+            }
+            
+            if (formData.endDate !== '-') {
+                formData.endDate = new Date(formData.endDate).toLocaleDateString('fr-FR');
+            }
+            
+            // Update preview elements
+            document.getElementById('preview-title').textContent = formData.title;
+            document.getElementById('preview-ref').textContent = formData.ref;
+            document.getElementById('preview-location').textContent = formData.location;
+            document.getElementById('preview-start-date').textContent = formData.startDate;
+            document.getElementById('preview-end-date').textContent = formData.endDate;
+            document.getElementById('preview-duration').textContent = formData.duration;
+            
+            // Update status with badge
+            const statusElement = document.getElementById('preview-status');
+            statusElement.textContent = formData.status;
+            statusElement.className = 'status-badge ' + statusBadges[formData.status];
+            
+            // Update other fields
+            document.getElementById('preview-client-name').textContent = formData.clientName;
+            document.getElementById('preview-client-address').textContent = formData.clientAddress;
+            document.getElementById('preview-client-contact').textContent = formData.clientContact;
+            document.getElementById('preview-architect-name').textContent = formData.architectName;
+            document.getElementById('preview-architect-contact').textContent = formData.architectContact;
+            document.getElementById('preview-project-manager').textContent = formData.projectManager;
+            document.getElementById('preview-contractor-name').textContent = formData.contractorName;
+            document.getElementById('preview-subcontractors').textContent = formData.subcontractors || 'Aucun';
+            document.getElementById('preview-site-manager').textContent = formData.siteManager;
+            document.getElementById('preview-contractor-contact').textContent = formData.contractorContact;
+            document.getElementById('preview-project-nature').textContent = formData.projectNature;
+            document.getElementById('preview-building-type').textContent = formData.buildingType;
+            document.getElementById('preview-total-area').textContent = formData.totalArea;
+            document.getElementById('preview-floors-count').textContent = formData.floorsCount;
+            document.getElementById('preview-foundation').textContent = formData.foundation;
+            document.getElementById('preview-materials').textContent = formData.materials;
+            document.getElementById('preview-specifics').textContent = formData.specifics;
+            document.getElementById('preview-project-cost').textContent = formData.projectCost;
+            document.getElementById('preview-funding-type').textContent = formData.fundingType;
+            
+            // Update custom fields preview
+            customFieldsPreview.innerHTML = '';
+            const customFields = document.querySelectorAll('.custom-field');
+            customFields.forEach(field => {
+                const fieldName = field.querySelector('.custom-field-name').value;
+                const fieldValue = field.querySelector('.custom-field-value').value;
+                
+                if (fieldName && fieldValue) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'custom-field-preview';
+                    previewItem.innerHTML = `
+                        <span class="preview-label">${fieldName}:</span>
+                        <span>${fieldValue}</span>
+                    `;
+                    customFieldsPreview.appendChild(previewItem);
+                }
+            });
+            
+            // Show download button
+            downloadBtn.style.display = 'block';
+        }
+        
+        // Reset form function
+        function resetForm() {
+            projectForm.reset();
+            
+            // Reset preview
+            const previewElements = document.querySelectorAll('#project-preview [id^="preview-"]');
+            previewElements.forEach(el => {
+                if (el.id === 'preview-status') {
+                    el.textContent = '-';
+                    el.className = '';
+                } else {
+                    el.textContent = '-';
+                }
+            });
+            
+            // Reset image previews
+            logoPreview.innerHTML = '<span>Aperçu du logo</span>';
+            signaturePreview.innerHTML = '<span>Aperçu de la signature</span>';
+            document.getElementById('preview-logo').src = '';
+            document.getElementById('preview-signature').src = '';
+            
+            // Reset custom fields
+            customFieldsContainer.innerHTML = '<div class="custom-field">' +
+                '<input type="text" placeholder="Nom du champ" class="custom-field-name">' +
+                '<input type="text" placeholder="Valeur" class="custom-field-value">' +
+                '<button type="button" class="custom-field-btn remove-field">✕</button>' +
+                '</div>';
+            customFieldsPreview.innerHTML = '';
+            
+            // Re-add event listeners to remove buttons
+            document.querySelectorAll('.remove-field').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.parentElement.remove();
+                    generatePreview();
+                });
+            });
+            
+            // Hide download button
+            downloadBtn.style.display = 'none';
+        }
+        
+        // Download PDF function
+        function downloadPDF() {
+            const previewElement = document.getElementById('project-preview');
+            
+            // Créer une copie de l'élément pour le PDF avec des styles ajustés
+            const pdfPreview = previewElement.cloneNode(true);
+            pdfPreview.style.width = '190mm';
+            pdfPreview.style.padding = '10mm';
+            pdfPreview.style.fontSize = '12px';
+            
+            // Positionner la signature en bas de la dernière page
+            const signatureArea = pdfPreview.querySelector('.signature-area');
+            signatureArea.style.position = 'absolute';
+            signatureArea.style.bottom = '20mm';
+            signatureArea.style.right = '20mm';
+            
+            document.body.appendChild(pdfPreview);
+            
+            html2canvas(pdfPreview, {
+                scale: 1.5,
+                useCORS: true,
+                logging: false,
+                backgroundColor: "#FFFFFF",
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: pdfPreview.scrollWidth,
+                windowHeight: pdfPreview.scrollHeight
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 190; // Largeur réduite pour les marges
+                const pageHeight = 280; // Hauteur réduite pour les marges
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 10; // Marge supérieure
+                
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                // Ajouter une deuxième page si nécessaire
+                if (heightLeft > 0) {
+                    pdf.addPage();
+                    position = 10 - (pageHeight - heightLeft);
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                }
+                
+                document.body.removeChild(pdfPreview);
+                
+                pdf.save('fiche_projet_SCM_SARL.pdf');
+            });
+        }
+        
+        // Initialize form with sample data
+        function initSampleData() {
+            document.getElementById('project-title').value = "Construction d'un immeuble résidentiel R+3";
+            document.getElementById('project-ref').value = "PROJ-2023-025";
+            document.getElementById('project-location').value = "123 Avenue des Champs-Élysées, 75008 Paris";
+            document.getElementById('start-date').value = "2023-09-01";
+            document.getElementById('end-date').value = "2024-08-31";
+            document.getElementById('project-duration').value = "12 mois";
+            document.getElementById('project-status').value = "En cours";
+            document.getElementById('client-name').value = "Promotion Immobilière Parisienne";
+            document.getElementById('client-address').value = "456 Boulevard Haussmann, 75009 Paris";
+            document.getElementById('client-contact').value = "contact@pip.fr / +33 1 45 67 89 10";
+            document.getElementById('architect-name').value = "Atelier d'Architecture Dubois";
+            document.getElementById('architect-contact').value = "10 Rue de Rivoli, 75004 Paris\ntel: +33 1 23 45 67 89\nemail: contact@dubois-archi.fr";
+            document.getElementById('project-manager').value = "Marie Dubois";
+            document.getElementById('contractor-name').value = "SCM SARL";
+            document.getElementById('subcontractors').value = "Électricité: ElecPro\nPlomberie: AquaTech\nMenuiserie: Bois & Design";
+            document.getElementById('site-manager').value = "Jean Martin";
+            document.getElementById('contractor-contact').value = "789 Avenue de la République, 75011 Paris\ntel: +33 1 43 65 87 09\nemail: contact@scm-sarl.fr";
+            document.getElementById('project-nature').value = "Construction neuve";
+            document.getElementById('building-type').value = "Résidentiel";
+            document.getElementById('total-area').value = "1200";
+            document.getElementById('floors-count').value = "3";
+            document.getElementById('foundation').value = "Fondations profondes, structure béton armé";
+            document.getElementById('materials').value = "Béton, acier, verre, bois";
+            document.getElementById('specifics').value = "Construction en milieu urbain dense, contraintes acoustiques strictes";
+            document.getElementById('project-cost').value = "1 200 000 €";
+            document.getElementById('funding-type').value = "Mixte";
+            
+            // Add sample custom field
+            setTimeout(() => {
+                document.querySelector('.custom-field-name').value = "Numéro de permis";
+                document.querySelector('.custom-field-value').value = "PER-2023-045";
+                
+                // Generate preview with sample data
+                generatePreview();
+            }, 100);
+        }
+        
+        // Add event listeners to existing remove buttons
+        document.querySelectorAll('.remove-field').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.remove();
+                generatePreview();
+            });
+        });
+        
+        // Initialize sample data on page load
+        window.addEventListener('load', initSampleData);
+    </script>
+</body>
+</html>

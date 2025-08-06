@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Devis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --scm-primary: #1a5f7a;
+            --scm-secondary: #2c7873;
+            --scm-light: #f8f9fa;
+            --scm-accent: #ff7e3f;
+            --scm-success: #28a745;
+            --scm-row-blue: #e6f2ff;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .scm-header {
+            background: linear-gradient(135deg, var(--scm-primary), var(--scm-secondary));
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        
+        .scm-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .section-header {
+            background-color: var(--scm-primary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .table-section table {
+            margin-bottom: 0;
+        }
+        
+        .table-section th {
+            background-color: var(--scm-secondary);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .table-section tbody tr {
+            background-color: var(--scm-row-blue);
+        }
+        
+        .table-section tbody tr:nth-child(even) {
+            background-color: #d9ebff;
+        }
+        
+        .subtotal {
+            background-color: #e9f7f7;
+            padding: 10px 15px;
+            font-weight: bold;
+            text-align: right;
+            border-top: 2px dashed #2c7873;
+        }
+        
+        .global-cost {
+            background-color: #d1ecf1;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: right;
+            border-radius: 0 0 8px 8px;
+            margin-top: -1px;
+        }
+        
+        .btn-scm {
+            background: linear-gradient(135deg, var(--scm-primary), var(--scm-secondary));
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-weight: 600;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .btn-scm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .btn-action {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin: 0 2px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--scm-accent);
+            box-shadow: 0 0 0 0.25rem rgba(255, 126, 63, 0.25);
+        }
+        
+        .footer-info {
+            background-color: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9rem;
+            margin-top: 25px;
+        }
+        
+        .logo-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: var(--scm-primary);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .badge-scm {
+            background-color: var(--scm-accent);
+            color: white;
+        }
+        
+        .duration-container {
+            background-color: #6f42c1;
+            color: white;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .editable-duration {
+            background: transparent;
+            border: 1px dashed rgba(255,255,255,0.5);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            width: 70px;
+            text-align: center;
+        }
+        
+        .edit-icon {
+            color: #0d6efd;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 16px;
+        }
+        
+        .delete-icon {
+            color: #dc3545;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 16px;
+        }
+        
+        .add-section-btn {
+            background-color: #198754;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            margin-top: 15px;
+            display: inline-block;
+            cursor: pointer;
+        }
+        
+        .modal-content {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--scm-primary), var(--scm-secondary));
+            color: white;
+        }
+        
+        .table-row-actions {
+            white-space: nowrap;
+            width: 100px;
+        }
+        
+        .floating-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .floating-buttons .btn {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+        
+        .editable-cell {
+            cursor: pointer;
+            border-bottom: 1px dashed #aaa;
+        }
+        
+        .editable-cell:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .global-total {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--scm-success);
+        }
+        
+        .formula-info {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .pdf-generating {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-size: 1.5rem;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .validation-error {
+            border: 1px solid #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .section-duration {
+            background-color: #6f42c1;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-2">
+        <div class="text-end mb-3">
+            <a href="https://app.scmsarl.site/" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> RETOUR
+            </a>
+        </div>
+    <div class="container py-4">
+        <div class="scm-header text-center">
+            <div class="logo-container">
+                <span class="logo-text">SCM SARL</span>
+                <div class="text-muted mt-1">Solution des Constructions Modernes</div>
+            </div>
+            <h1 class="mt-3">Générateur de Devis</h1>
+            <p class="mb-0">Édition complète avec calculs automatiques</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="scm-card">
+                    <h3 class="mb-4"><i class="bi bi-building"></i> Informations du Projet</h3>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nom du Client</label>
+                        <input type="text" class="form-control" id="client-name" value="GUELORD MUYAYALO">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Adresse du Chantier</label>
+                        <input type="text" class="form-control" id="site-address" value="KINSHASA/NGALIEMA/AV.NGUMA">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact</label>
+                        <input type="text" class="form-control" id="contact" value="(+243) 816 897 572">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type de Construction</label>
+                        <select class="form-select" id="building-type">
+                            <option>Immeuble R+4</option>
+                            <option>Immeuble R+3</option>
+                            <option>Immeuble R+2</option>
+                            <option>Maison individuelle</option>
+                            <option>Bâtiment commercial</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date du Devis</label>
+                        <input type="date" class="form-control" id="quote-date" value="2023-08-15">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Référence Devis</label>
+                        <input type="text" class="form-control" id="quote-ref" value="DEV-2023-08-001">
+                    </div>
+                </div>
+                
+                <div class="scm-card">
+                    <h3 class="mb-4"><i class="bi bi-gear"></i> Paramètres</h3>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre d'Étages</label>
+                        <select class="form-select" id="floor-count">
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option selected>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Marge d'Imprévu (%)</label>
+                        <input type="number" class="form-control" id="contingency" value="5" min="0" max="20">
+                        <div class="formula-info">Imprévu = (sous-total section) × %</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Coût Main d'Œuvre ($/m²)</label>
+                        <input type="number" class="form-control" id="labor-cost" value="35">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Coût Transport (%)</label>
+                        <input type="number" class="form-control" id="transport-cost" value="3" min="0" max="20">
+                        <div class="formula-info">Transport = (sous-total section) × %</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Coût Restauration ($/jour)</label>
+                        <input type="number" class="form-control" id="food-cost" value="25">
+                    </div>
+                    
+                    <div class="d-grid mt-3">
+                        <button class="btn btn-primary" id="apply-params">
+                            <i class="bi bi-calculator"></i> Appliquer les paramètres
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="scm-card">
+                    <h3 class="mb-4"><i class="bi bi-plus-circle"></i> Ajouter une Étape</h3>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nom de l'Étape</label>
+                        <input type="text" class="form-control" id="new-step-name" placeholder="Ex: Toiture">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="new-step-desc" rows="2" placeholder="Description de l'étape"></textarea>
+                    </div>
+                    
+                    <button class="btn-scm w-100" id="add-new-step">
+                        <i class="bi bi-plus-lg"></i> Ajouter l'Étape
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="scm-card">
+                    <h3 class="mb-4"><i class="bi bi-receipt"></i> Détails du Devis</h3>
+                    
+                    <!-- Section Implantation -->
+                    <div class="section-header" id="section-1">
+                        <span>I. IMPLANTATION ET INSTALLATION DU CHANTIER</span>
+                        <div>
+                            <i class="bi bi-pencil-square edit-icon" data-section="1" data-title="IMPLANTATION ET INSTALLATION DU CHANTIER"></i>
+                            <i class="bi bi-trash delete-icon" data-section="1"></i>
+                        </div>
+                    </div>
+                    <div class="table-section">
+                        <table class="table table-hover" id="table-1">
+                            <thead>
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Unité</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire ($)</th>
+                                    <th>Prix Total ($)</th>
+                                    <th class="table-row-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Implantation et installation du chantier</td>
+                                    <td class="editable-cell" contenteditable="true">fft</td>
+                                    <td class="editable-cell" contenteditable="true">1</td>
+                                    <td class="editable-cell" contenteditable="true">500</td>
+                                    <td>500</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Ficelle</td>
+                                    <td class="editable-cell" contenteditable="true">Pièce</td>
+                                    <td class="editable-cell" contenteditable="true">5</td>
+                                    <td class="editable-cell" contenteditable="true">3</td>
+                                    <td>15</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Règle (3m)</td>
+                                    <td class="editable-cell" contenteditable="true">Pièce</td>
+                                    <td class="editable-cell" contenteditable="true">4</td>
+                                    <td class="editable-cell" contenteditable="true">10</td>
+                                    <td>40</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Projecteur 300W</td>
+                                    <td class="editable-cell" contenteditable="true">Pièce</td>
+                                    <td class="editable-cell" contenteditable="true">4</td>
+                                    <td class="editable-cell" contenteditable="true">50</td>
+                                    <td>200</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="text-end p-2">
+                            <button class="btn btn-sm btn-success add-row">
+                                <i class="bi bi-plus-lg"></i> Ajouter une ligne
+                            </button>
+                        </div>
+                        <div class="subtotal">
+                            SOUS-TOTAL: $<span class="section-total">755</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Section Fondation -->
+                    <div class="section-header" id="section-2">
+                        <span>II. FONDATION (SEMELLES, SOCLES, LONGRINE)</span>
+                        <div>
+                            <i class="bi bi-pencil-square edit-icon" data-section="2" data-title="FONDATION (SEMELLES, SOCLES, LONGRINE)"></i>
+                            <i class="bi bi-trash delete-icon" data-section="2"></i>
+                        </div>
+                    </div>
+                    <div class="table-section">
+                        <table class="table table-hover" id="table-2">
+                            <thead>
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Unité</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire ($)</th>
+                                    <th>Prix Total ($)</th>
+                                    <th class="table-row-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Terrassement</td>
+                                    <td class="editable-cell" contenteditable="true">fft</td>
+                                    <td class="editable-cell" contenteditable="true">1</td>
+                                    <td class="editable-cell" contenteditable="true">500</td>
+                                    <td>500</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Ciment (50 kg R=42.5)</td>
+                                    <td class="editable-cell" contenteditable="true">Sac</td>
+                                    <td class="editable-cell" contenteditable="true">182</td>
+                                    <td class="editable-cell" contenteditable="true">10.5</td>
+                                    <td>1911</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Sable</td>
+                                    <td class="editable-cell" contenteditable="true">Tonne</td>
+                                    <td class="editable-cell" contenteditable="true">40</td>
+                                    <td class="editable-cell" contenteditable="true">11</td>
+                                    <td>440</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="text-end p-2">
+                            <button class="btn btn-sm btn-success add-row">
+                                <i class="bi bi-plus-lg"></i> Ajouter une ligne
+                            </button>
+                        </div>
+                        <div class="subtotal">
+                            SOUS-TOTAL: $<span class="section-total">2851</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Section RDC -->
+                    <div class="section-header" id="section-3">
+                        <span>III. ÉLÉVATION RDC (MACONNERIE, COLONNES, POUTRES, DALLES)</span>
+                        <div>
+                            <i class="bi bi-pencil-square edit-icon" data-section="3" data-title="ÉLÉVATION RDC (MACONNERIE, COLONNES, POUTRES, DALLES)"></i>
+                            <i class="bi bi-trash delete-icon" data-section="3"></i>
+                        </div>
+                    </div>
+                    <div class="table-section">
+                        <table class="table table-hover" id="table-3">
+                            <thead>
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Unité</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire ($)</th>
+                                    <th>Prix Total ($)</th>
+                                    <th class="table-row-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Ciment (50 kg R=42.5)</td>
+                                    <td class="editable-cell" contenteditable="true">Sac</td>
+                                    <td class="editable-cell" contenteditable="true">290</td>
+                                    <td class="editable-cell" contenteditable="true">11</td>
+                                    <td>3190</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Sable</td>
+                                    <td class="editable-cell" contenteditable="true">Tonne</td>
+                                    <td class="editable-cell" contenteditable="true">50</td>
+                                    <td class="editable-cell" contenteditable="true">11</td>
+                                    <td>550</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Bloc de 15</td>
+                                    <td class="editable-cell" contenteditable="true">Pièce</td>
+                                    <td class="editable-cell" contenteditable="true">2967</td>
+                                    <td class="editable-cell" contenteditable="true">1</td>
+                                    <td>2967</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="text-end p-2">
+                            <button class="btn btn-sm btn-success add-row">
+                                <i class="bi bi-plus-lg"></i> Ajouter une ligne
+                            </button>
+                        </div>
+                        <div class="subtotal">
+                            SOUS-TOTAL: $<span class="section-total">6707</span>
+                        </div>
+                        <div class="global-cost">
+                            <div class="d-flex justify-content-between">
+                                <span>Main d'œuvre (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="labor">5000</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Restauration (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="food">500</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Transport (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="transport">1600</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Imprévu:</span>
+                                <span>$<span class="editable-cost" data-type="contingency">335.35</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2 border-top pt-2">
+                                <strong>COÛT GLOBAL DU PROJET (RDC):</strong>
+                                <strong>$<span class="floor-total">14142.35</span></strong>
+                            </div>
+                            <div class="mt-2 text-end">
+                                <span class="duration-container">
+                                    DURÉE DES TRAVAUX: 
+                                    <input type="text" class="editable-duration" value="3 MOIS">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section R+1 à R+4 -->
+                    <div id="floors-container">
+                        <!-- Les étages seront générés dynamiquement ici -->
+                    </div>
+                    
+                    <!-- Total global -->
+                    <div class="section-header mt-4">
+                        TOTAL GLOBAL DU PROJET
+                    </div>
+                    <div class="table-section">
+                        <table class="table" id="global-summary">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Implantation et fondation</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="1-2">3606</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Rez-de-chaussée</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="3">14142.35</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Étage R+1</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="floor-1">0</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Étage R+2</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="floor-2">0</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Étage R+3</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="floor-3">0</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Étage R+4</strong></td>
+                                    <td class="text-end">$<span class="section-summary" data-section="floor-4">0</span></td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td><strong>TOTAL GLOBAL</strong></td>
+                                    <td class="text-end global-total">$<span id="global-total">17748.35</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        <button class="btn-scm" id="generate-pdf">
+                            <i class="bi bi-file-earmark-pdf"></i> Télécharger le PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="footer-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Informations de l'Entreprise</h5>
+                            <p class="mb-1"><strong>SCM SARL</strong> - Solution des constructions modernes Sarl</p>
+                            <p class="mb-1">RCCM: CD/KNM/RCCM/24-B-01256</p>
+                            <p class="mb-1">Numéro Impôt: A24421735</p>
+                            <p class="mb-1">IDMAT: 01-F4200-N55523N</p>
+                            <p class="mb-1">Adresse: Kinshasa/ngallema/avenue Kilimani numéro 28 A</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Moyens de Paiement</h5>
+                            <p class="mb-1">EQUITY BCDC: 377100182502428</p>
+                            <p class="mb-1">M-PESA: +243814644847</p>
+                            <p class="mb-1">AIRTEL MONEY: +243996742215</p>
+                            <p class="mb-1">Email: solutiondeconstructionmodernes@gmail.com</p>
+                            <p class="mb-1">Site web: http://www.semsarl.site</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating action buttons -->
+    <div class="floating-buttons">
+        <button class="btn btn-primary btn-lg rounded-circle" id="add-section-btn" title="Ajouter une section">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
+    
+    <!-- PDF Generating Indicator -->
+    <div class="pdf-generating" id="pdf-loading" style="display: none;">
+        <div class="spinner"></div>
+        <div>Génération du PDF en cours...</div>
+        <div class="mt-2">Veuillez patienter</div>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal fade" id="editSectionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modifier la section</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Titre de la section</label>
+                        <input type="text" class="form-control" id="edit-section-title">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="save-section-changes">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentSectionId = null;
+        let sections = [];
+        let customSectionCount = 0;
+        
+        // Générer les étages dynamiquement
+        function generateFloors() {
+            const floorCount = parseInt(document.getElementById('floor-count').value);
+            const container = document.getElementById('floors-container');
+            container.innerHTML = '';
+            
+            for(let i = 1; i <= floorCount; i++) {
+                let floorTitle = '';
+                let duration = '';
+                let romanNumeral = '';
+                
+                if(i === 1) {
+                    floorTitle = `IV. ÉTAGE R+${i}`;
+                    romanNumeral = 'IV';
+                    duration = '2 MOIS';
+                } else if(i === 2) {
+                    floorTitle = `V. ÉTAGE R+${i}`;
+                    romanNumeral = 'V';
+                    duration = '2 MOIS';
+                } else if(i === 3) {
+                    floorTitle = `VI. ÉTAGE R+${i}`;
+                    romanNumeral = 'VI';
+                    duration = '2 MOIS';
+                } else if(i === 4) {
+                    floorTitle = `VII. ÉTAGE R+${i}`;
+                    romanNumeral = 'VII';
+                    duration = '2 MOIS';
+                } else {
+                    floorTitle = `${String.fromCharCode(70 + i)}. ÉTAGE R+${i}`;
+                    romanNumeral = String.fromCharCode(70 + i);
+                    duration = '2 MOIS';
+                }
+                
+                const floorHtml = `
+                    <div class="section-header" id="section-floor-${i}">
+                        <span>${floorTitle}</span>
+                        <div>
+                            <i class="bi bi-pencil-square edit-icon" data-section="floor-${i}" data-title="${floorTitle}"></i>
+                            <i class="bi bi-trash delete-icon" data-section="floor-${i}"></i>
+                        </div>
+                    </div>
+                    <div class="table-section">
+                        <table class="table table-hover" id="table-floor-${i}">
+                            <thead>
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Unité</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire ($)</th>
+                                    <th>Prix Total ($)</th>
+                                    <th class="table-row-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Ciment (50 kg R=42.5)</td>
+                                    <td class="editable-cell" contenteditable="true">Sac</td>
+                                    <td class="editable-cell" contenteditable="true">200</td>
+                                    <td class="editable-cell" contenteditable="true">11</td>
+                                    <td>2200</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="editable-cell" contenteditable="true">Sable</td>
+                                    <td class="editable-cell" contenteditable="true">Tonne</td>
+                                    <td class="editable-cell" contenteditable="true">50</td>
+                                    <td class="editable-cell" contenteditable="true">11</td>
+                                    <td>550</td>
+                                    <td class="table-row-actions">
+                                        <button class="btn btn-sm btn-outline-danger delete-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="text-end p-2">
+                            <button class="btn btn-sm btn-success add-row">
+                                <i class="bi bi-plus-lg"></i> Ajouter une ligne
+                            </button>
+                        </div>
+                        <div class="subtotal">
+                            SOUS-TOTAL: $<span class="section-total">2750</span>
+                        </div>
+                        <div class="global-cost">
+                            <div class="d-flex justify-content-between">
+                                <span>Main d'œuvre (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="labor">4000</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Restauration (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="food">400</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Transport (Forfaitaire):</span>
+                                <span>$<span class="editable-cost" data-type="transport">1000</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Imprévu:</span>
+                                <span>$<span class="editable-cost" data-type="contingency">137.5</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2 border-top pt-2">
+                                <strong>COÛT GLOBAL:</strong>
+                                <strong>$<span class="floor-total">8287.5</span></strong>
+                            </div>
+                            <div class="mt-2 text-end">
+                                <span class="duration-container">
+                                    DURÉE DES TRAVAUX: 
+                                    <input type="text" class="editable-duration" value="${duration}">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += floorHtml;
+            }
+            
+            // Initialiser les écouteurs d'événements après la génération
+            initEventListeners();
+            calculateAll();
+        }
+        
+        // Calculer le total d'une ligne
+        function calculateLineTotal(row) {
+            // Valider les entrées numériques
+            const quantityCell = row.cells[2];
+            const priceCell = row.cells[3];
+            
+            let quantity = parseFloat(quantityCell.textContent) || 0;
+            let unitPrice = parseFloat(priceCell.textContent) || 0;
+            
+            // Appliquer les validations
+            if (isNaN(quantity) || quantity < 0) {
+                quantityCell.classList.add('validation-error');
+                quantity = 0;
+            } else {
+                quantityCell.classList.remove('validation-error');
+            }
+            
+            if (isNaN(unitPrice) || unitPrice < 0) {
+                priceCell.classList.add('validation-error');
+                unitPrice = 0;
+            } else {
+                priceCell.classList.remove('validation-error');
+            }
+            
+            const total = quantity * unitPrice;
+            row.cells[4].textContent = total.toFixed(2);
+            return total;
+        }
+        
+        // Calculer le total d'une section
+        function calculateSectionTotal(sectionId) {
+            const table = document.getElementById(`table-${sectionId}`);
+            if (!table) return 0;
+            
+            let sectionTotal = 0;
+            for (let i = 0; i < table.rows.length; i++) {
+                if (table.rows[i].cells.length > 4) {
+                    sectionTotal += calculateLineTotal(table.rows[i]);
+                }
+            }
+            
+            // Mettre à jour l'affichage du sous-total
+            const subtotalEl = table.closest('.table-section').querySelector('.section-total');
+            if (subtotalEl) {
+                subtotalEl.textContent = sectionTotal.toFixed(2);
+            }
+            
+            return sectionTotal;
+        }
+        
+        // Calculer les coûts forfaitaires
+        function calculateFixedCosts(sectionId, sectionTotal) {
+            const sectionEl = document.getElementById(`section-${sectionId}`).nextElementSibling;
+            if (!sectionEl) return 0;
+            
+            const laborEl = sectionEl.querySelector('.editable-cost[data-type="labor"]');
+            const foodEl = sectionEl.querySelector('.editable-cost[data-type="food"]');
+            const transportEl = sectionEl.querySelector('.editable-cost[data-type="transport"]');
+            const contingencyEl = sectionEl.querySelector('.editable-cost[data-type="contingency"]');
+            const floorTotalEl = sectionEl.querySelector('.floor-total');
+            
+            const labor = parseFloat(laborEl.textContent) || 0;
+            const food = parseFloat(foodEl.textContent) || 0;
+            const transport = parseFloat(transportEl.textContent) || 0;
+            
+            // Calculer l'imprévu en fonction du pourcentage
+            const contingencyPercent = parseFloat(document.getElementById('contingency').value) / 100;
+            const contingency = sectionTotal * contingencyPercent;
+            contingencyEl.textContent = contingency.toFixed(2);
+            
+            // Calculer le total de l'étage
+            const floorTotal = sectionTotal + labor + food + transport + contingency;
+            floorTotalEl.textContent = floorTotal.toFixed(2);
+            
+            return floorTotal;
+        }
+        
+        // Calculer le total global
+        function calculateGlobalTotal() {
+            let globalTotal = 0;
+            
+            // Ajouter les sections principales
+            const mainSections = ['1', '2', '3'];
+            mainSections.forEach(sectionId => {
+                const sectionTotal = parseFloat(document.querySelector(`#table-${sectionId}`)
+                    .closest('.table-section')
+                    .querySelector('.section-total').textContent) || 0;
+                globalTotal += sectionTotal;
+                
+                // Mettre à jour le récapitulatif global
+                document.querySelector(`.section-summary[data-section="${sectionId}"]`).textContent = sectionTotal.toFixed(2);
+            });
+            
+            // Ajouter les étages
+            const floorCount = parseInt(document.getElementById('floor-count').value);
+            for(let i = 1; i <= floorCount; i++) {
+                const sectionId = `floor-${i}`;
+                const sectionEl = document.getElementById(`section-${sectionId}`);
+                if (!sectionEl) continue;
+                
+                const floorTotalEl = sectionEl.nextElementSibling.querySelector('.floor-total');
+                const floorTotal = parseFloat(floorTotalEl.textContent) || 0;
+                globalTotal += floorTotal;
+                
+                // Mettre à jour le récapitulatif global
+                document.querySelector(`.section-summary[data-section="${sectionId}"]`).textContent = floorTotal.toFixed(2);
+            }
+            
+            // Ajouter les sections personnalisées
+            const customSections = document.querySelectorAll('.section-header[id^="section-custom-"]');
+            customSections.forEach(section => {
+                const sectionId = section.id.split('-')[1];
+                const subtotalEl = document.querySelector(`#table-${sectionId}`).closest('.table-section').querySelector('.section-total');
+                if (subtotalEl) {
+                    const sectionTotal = parseFloat(subtotalEl.textContent) || 0;
+                    globalTotal += sectionTotal;
+                    // Pas de récapitulatif dans le tableau global pour les sections personnalisées
+                }
+            });
+            
+            // Mettre à jour l'affichage du total global
+            document.getElementById('global-total').textContent = globalTotal.toFixed(2);
+            
+            return globalTotal;
+        }
+        
+        // Initialiser les écouteurs d'événements
+        function initEventListeners() {
+            // Écouteurs pour les cellules éditables
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('blur', function() {
+                    const row = this.parentElement;
+                    calculateLineTotal(row);
+                    const table = row.closest('table');
+                    const sectionId = table.id.split('-')[1];
+                    const sectionTotal = calculateSectionTotal(sectionId);
+                    
+                    // Si c'est une section d'étage ou RDC, recalculer les coûts forfaitaires
+                    if (sectionId.startsWith('floor') || sectionId === '3') {
+                        calculateFixedCosts(sectionId, sectionTotal);
+                    }
+                    
+                    calculateGlobalTotal();
+                });
+            });
+            
+            // Écouteurs pour les coûts forfaitaires éditables
+            document.querySelectorAll('.editable-cost').forEach(cost => {
+                cost.addEventListener('blur', function() {
+                    const sectionEl = this.closest('.table-section');
+                    const sectionId = sectionEl.previousElementSibling.id.split('-')[1];
+                    const sectionTotal = calculateSectionTotal(sectionId);
+                    calculateFixedCosts(sectionId, sectionTotal);
+                    calculateGlobalTotal();
+                });
+            });
+            
+            // Écouteurs pour les boutons "Ajouter une ligne"
+            document.querySelectorAll('.add-row').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const table = this.closest('.table-section').querySelector('table');
+                    const tbody = table.querySelector('tbody');
+                    const newRow = document.createElement('tr');
+                    
+                    newRow.innerHTML = `
+                        <td class="editable-cell" contenteditable="true">Nouvel article</td>
+                        <td class="editable-cell" contenteditable="true">Unité</td>
+                        <td class="editable-cell" contenteditable="true">1</td>
+                        <td class="editable-cell" contenteditable="true">0</td>
+                        <td>0</td>
+                        <td class="table-row-actions">
+                            <button class="btn btn-sm btn-outline-danger delete-row">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(newRow);
+                    
+                    // Ajouter les écouteurs à la nouvelle ligne
+                    newRow.querySelectorAll('.editable-cell').forEach(cell => {
+                        cell.addEventListener('blur', function() {
+                            calculateLineTotal(newRow);
+                            const table = newRow.closest('table');
+                            const sectionId = table.id.split('-')[1];
+                            calculateSectionTotal(sectionId);
+                            calculateGlobalTotal();
+                        });
+                    });
+                    
+                    // Ajouter l'écouteur au bouton de suppression
+                    newRow.querySelector('.delete-row').addEventListener('click', function() {
+                        if (confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
+                            newRow.remove();
+                            const table = newRow.closest('table');
+                            const sectionId = table.id.split('-')[1];
+                            calculateSectionTotal(sectionId);
+                            calculateGlobalTotal();
+                        }
+                    });
+                });
+            });
+            
+            // Écouteurs pour les boutons "Supprimer une ligne"
+            document.querySelectorAll('.delete-row').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const row = this.closest('tr');
+                    if (confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
+                        row.remove();
+                        const table = row.closest('table');
+                        const sectionId = table.id.split('-')[1];
+                        calculateSectionTotal(sectionId);
+                        calculateGlobalTotal();
+                    }
+                });
+            });
+            
+            // Écouteurs pour les boutons "Modifier la section"
+            document.querySelectorAll('.edit-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    const sectionTitle = this.getAttribute('data-title');
+                    currentSectionId = sectionId;
+                    document.getElementById('edit-section-title').value = sectionTitle;
+                    const modal = new bootstrap.Modal(document.getElementById('editSectionModal'));
+                    modal.show();
+                });
+            });
+            
+            // Écouteur pour sauvegarder les modifications de section
+            document.getElementById('save-section-changes').addEventListener('click', function() {
+                const newTitle = document.getElementById('edit-section-title').value;
+                if (newTitle) {
+                    document.querySelector(`#section-${currentSectionId} span`).textContent = newTitle;
+                    // Mettre à jour l'attribut data-title pour l'icône d'édition
+                    document.querySelector(`#section-${currentSectionId} .edit-icon`).setAttribute('data-title', newTitle);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editSectionModal'));
+                    modal.hide();
+                }
+            });
+            
+            // Écouteurs pour les boutons "Supprimer la section"
+            document.querySelectorAll('.delete-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    if (confirm("Êtes-vous sûr de vouloir supprimer cette section ?")) {
+                        document.getElementById(`section-${sectionId}`).remove();
+                        document.getElementById(`section-${sectionId}`).nextElementSibling.remove();
+                        calculateGlobalTotal();
+                    }
+                });
+            });
+            
+            // Écouteur pour le bouton "Ajouter une nouvelle étape"
+            document.getElementById('add-new-step').addEventListener('click', function() {
+                const sectionName = document.getElementById('new-step-name').value;
+                const sectionDesc = document.getElementById('new-step-desc').value;
+                
+                if (sectionName) {
+                    const sectionsContainer = document.querySelector('.scm-card > #floors-container').previousElementSibling;
+                    customSectionCount++;
+                    const newSectionId = `custom-${customSectionCount}`;
+                    
+                    const newSectionHtml = `
+                        <div class="section-header" id="section-${newSectionId}">
+                            <span>${sectionName}</span>
+                            <div>
+                                <i class="bi bi-pencil-square edit-icon" data-section="${newSectionId}" data-title="${sectionName}"></i>
+                                <i class="bi bi-trash delete-icon" data-section="${newSectionId}"></i>
+                            </div>
+                        </div>
+                        <div class="table-section">
+                            <table class="table table-hover" id="table-${newSectionId}">
+                                <thead>
+                                    <tr>
+                                        <th>Désignation</th>
+                                        <th>Unité</th>
+                                        <th>Quantité</th>
+                                        <th>Prix Unitaire ($)</th>
+                                        <th>Prix Total ($)</th>
+                                        <th class="table-row-actions">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sectionDesc ? `<tr><td colspan="6">${sectionDesc}</td></tr>` : `
+                                    <tr>
+                                        <td class="editable-cell" contenteditable="true">Nouvel article</td>
+                                        <td class="editable-cell" contenteditable="true">Unité</td>
+                                        <td class="editable-cell" contenteditable="true">1</td>
+                                        <td class="editable-cell" contenteditable="true">0</td>
+                                        <td>0</td>
+                                        <td class="table-row-actions">
+                                            <button class="btn btn-sm btn-outline-danger delete-row">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    `}
+                                </tbody>
+                            </table>
+                            <div class="text-end p-2">
+                                <button class="btn btn-sm btn-success add-row">
+                                    <i class="bi bi-plus-lg"></i> Ajouter une ligne
+                                </button>
+                            </div>
+                            <div class="subtotal">
+                                SOUS-TOTAL: $<span class="section-total">0</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    sectionsContainer.insertAdjacentHTML('afterend', newSectionHtml);
+                    
+                    // Réinitialiser le formulaire
+                    document.getElementById('new-step-name').value = '';
+                    document.getElementById('new-step-desc').value = '';
+                    
+                    // Initialiser les écouteurs pour la nouvelle section
+                    initEventListeners();
+                }
+            });
+            
+            // Écouteur pour le bouton "Appliquer les paramètres"
+            document.getElementById('apply-params').addEventListener('click', function() {
+                calculateAll();
+            });
+            
+            // Écouteur pour le bouton "Générer PDF"
+            document.getElementById('generate-pdf').addEventListener('click', function() {
+                document.getElementById('pdf-loading').style.display = 'flex';
+                
+                // Petite pause pour permettre l'affichage de l'indicateur
+                setTimeout(() => {
+                    generatePDF();
+                    document.getElementById('pdf-loading').style.display = 'none';
+                }, 100);
+            });
+            
+            // Écouteur pour le bouton flottant "Ajouter une section"
+            document.getElementById('add-section-btn').addEventListener('click', function() {
+                document.getElementById('new-step-name').focus();
+            });
+            
+            // Écouteur pour le changement du nombre d'étages
+            document.getElementById('floor-count').addEventListener('change', generateFloors);
+            
+            // Écouteur pour les champs de durée
+            document.querySelectorAll('.editable-duration').forEach(input => {
+                input.addEventListener('blur', function() {
+                    // On pourrait sauvegarder cette valeur si nécessaire
+                });
+            });
+        }
+        
+        // Fonction optimisée pour extraire les données des tableaux
+        function getTableData(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return { head: [], body: [] };
+            
+            const head = [];
+            for (let i = 0; i < table.rows[0].cells.length - 1; i++) { // Exclure Actions
+                head.push(table.rows[0].cells[i].textContent);
+            }
+            
+            const body = [];
+            for (let i = 1; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const rowData = [];
+                for (let j = 0; j < row.cells.length - 1; j++) { // Exclure Actions
+                    rowData.push(row.cells[j].textContent);
+                }
+                body.push(rowData);
+            }
+            
+            return { head, body };
+        }
+        
+        // Générer le PDF
+        function generatePDF() {
+            // Initialize jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Company header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text("SCM SARL", 105, 15, null, null, 'center');
+            doc.setFontSize(10);
+            doc.text("Solution des constructions modernes Sarl", 105, 22, null, null, 'center');
+            doc.text("RCCM: CD/KNM/RCCM/24-B-01256 | NUMERO IMPOT: A24421735 | IDMAT: 01-F4200-N55523N", 105, 27, null, null, 'center');
+            doc.text("Adresse résidentielle d'entreprise: Kinshasa/ngallema/avenue Kilimani numéro 28 A", 105, 32, null, null, 'center');
+            
+            // Quote title
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text("DEVIS QUANTITATIF ET ESTIMATIF", 105, 42, null, null, 'center');
+            doc.text(`RELATIF AUX TRAVAUX DE CONSTRUCTION D'IMMEUBLE EN ${document.getElementById('building-type').value}`, 105, 48, null, null, 'center');
+            
+            // Client information
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`NOMS DU MAITRE D'OUVRAGE: ${document.getElementById('client-name').value}`, 20, 58);
+            doc.text(`ADRESSE DU CHANTIER: ${document.getElementById('site-address').value}`, 20, 63);
+            doc.text(`CONTACT: ${document.getElementById('contact').value}`, 20, 68);
+            doc.text(`DATE DU DEVIS: ${document.getElementById('quote-date').value}`, 20, 73);
+            doc.text(`RÉFÉRENCE: ${document.getElementById('quote-ref').value}`, 20, 78);
+            
+            // Sections
+            let y = 88;
+            const sections = document.querySelectorAll('.section-header');
+            
+            sections.forEach(section => {
+                if (y > 250) {
+                    doc.addPage();
+                    y = 20;
+                    // Add header to new page
+                    doc.setFontSize(10);
+                    doc.text("SCM SARL - Devis Construction", 105, 15, null, null, 'center');
+                }
+                
+                const sectionTitle = section.querySelector('span').textContent;
+                const sectionId = section.id.split('-')[1];
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(sectionTitle, 20, y);
+                y += 8;
+                
+                // Récupérer les données du tableau
+                const tableData = getTableData(`table-${sectionId}`);
+                
+                if (tableData.head.length > 0 && tableData.body.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [tableData.head],
+                        body: tableData.body,
+                        theme: 'grid',
+                        headStyles: { fillColor: [44, 120, 115] },
+                        styles: { fontSize: 9 },
+                        margin: { left: 20 }
+                    });
+                    
+                    y = doc.autoTable.previous.finalY + 10;
+                    
+                    // Subtotal
+                    const subtotal = document.querySelector(`#table-${sectionId}`).closest('.table-section').querySelector('.subtotal').textContent;
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(subtotal, 180, y);
+                    y += 8;
+                }
+                
+                // Global cost for floors
+                if (sectionId.startsWith('floor') || sectionId === '3') {
+                    const globalCost = section.nextElementSibling.querySelector('.global-cost');
+                    if (globalCost) {
+                        const costItems = globalCost.querySelectorAll('.d-flex:not(.mt-2)');
+                        
+                        costItems.forEach(item => {
+                            const label = item.children[0].textContent;
+                            const value = item.children[1].textContent;
+                            doc.text(`${label} ${value}`, 20, y);
+                            y += 5;
+                        });
+                        
+                        const total = globalCost.querySelector('.mt-2 .floor-total').textContent;
+                        doc.text(`COÛT GLOBAL: $${total}`, 20, y + 5);
+                        
+                        // Durée des travaux
+                        const duration = globalCost.querySelector('.editable-duration').value;
+                        doc.text(`DURÉE DES TRAVAUX: ${duration}`, 20, y + 15);
+                        
+                        y += 25;
+                    }
+                }
+                
+                y += 10;
+            });
+            
+            // Global summary
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text("SYNTHÈSE DU COÛT GLOBAL DU PROJET", 105, 20, null, null, 'center');
+            
+            const summaryTable = document.getElementById('global-summary');
+            const summaryData = [];
+            
+            for (let i = 0; i < summaryTable.rows.length; i++) {
+                const rowData = [
+                    summaryTable.rows[i].cells[0].innerHTML,
+                    summaryTable.rows[i].cells[1].textContent
+                ];
+                summaryData.push(rowData);
+            }
+            
+            doc.autoTable({
+                startY: 30,
+                body: summaryData,
+                theme: 'grid',
+                styles: { fontSize: 11, cellPadding: 3 },
+                margin: { left: 20, right: 20 },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 150 },
+                    1: { cellWidth: 40, halign: 'right' }
+                }
+            });
+            
+            // Payment information
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text("Signature: ___________________________", 20, doc.autoTable.previous.finalY + 20);
+            doc.text("IR.JOSTIN KANZENZE, Directeur d'entreprise", 20, doc.autoTable.previous.finalY + 25);
+            
+            doc.text("Moyens de paiement:", 20, doc.autoTable.previous.finalY + 35);
+            doc.text("EQUITY BCDC: 377100182502428", 20, doc.autoTable.previous.finalY + 40);
+            doc.text("M-PESA: +243814644847", 20, doc.autoTable.previous.finalY + 45);
+            doc.text("AIRTEL MONEY: +243996742215", 20, doc.autoTable.previous.finalY + 50);
+            
+            // Save the PDF
+            doc.save(`devis-scm-${document.getElementById('quote-ref').value}.pdf`);
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            generateFloors();
+            initEventListeners();
+        });
+    </script>
+</body>
+</html>

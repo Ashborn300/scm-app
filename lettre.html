@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM SARL - Générateur de Lettres de Licenciement</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --a4-width: 210mm;
+            --a4-height: 297mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #2c3e50 0%, #1a2530 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        h1 {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .form-section, .preview-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .section-title {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            color: var(--primary);
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+            font-size: 1.05rem;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+            background: #fff;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .logo-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .logo-upload:hover {
+            border-color: var(--secondary);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .logo-preview {
+            max-width: 200px;
+            max-height: 100px;
+            display: none;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .letter-preview {
+            width: var(--a4-width);
+            min-height: var(--a4-height);
+            background: white;
+            border: 1px solid #ddd;
+            padding: 25mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+        
+        @media (max-width: 800px) {
+            .letter-preview {
+                width: 100%;
+                padding: 20px;
+            }
+        }
+        
+        .letter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .company-logo {
+            max-width: 180px;
+            max-height: 90px;
+            object-fit: contain;
+        }
+        
+        .company-info {
+            text-align: right;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .company-info-line {
+            margin-bottom: 5px;
+        }
+        
+        .date {
+            margin-bottom: 30px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .letter-content {
+            margin-top: 30px;
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+        
+        .letter-content p {
+            margin-bottom: 20px;
+        }
+        
+        .recipient-info {
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+        
+        .recipient-info-line {
+            margin-bottom: 5px;
+        }
+        
+        .letter-footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 25mm;
+            left: 25mm;
+            right: 25mm;
+        }
+        
+        .signature-area {
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        
+        .signature-line {
+            width: 220px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 8px;
+        }
+        
+        .signature-text {
+            font-size: 0.95rem;
+            color: #555;
+        }
+        
+        .logo-placeholder {
+            width: 180px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 1px dashed #ddd;
+            color: #777;
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        
+        .notification {
+            padding: 18px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            display: none;
+            font-size: 1.1rem;
+        }
+        
+        .notification-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .notification-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .required:after {
+            content: " *";
+            color: var(--danger);
+        }
+        
+        .info-text {
+            font-size: 0.95rem;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        .preview-info {
+            background: linear-gradient(to right, #e3f2fd, #bbdefb);
+            padding: 18px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .preview-info i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+        
+        footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #666;
+            font-size: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .a4-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--secondary);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        @media (min-width: 801px) {
+            .a4-indicator {
+                display: block;
+            }
+        }
+        
+        .page-counter {
+            position: absolute;
+            bottom: 10mm;
+            right: 25mm;
+            font-size: 0.9rem;
+            color: #777;
+        }
+        
+        .quality-info {
+            background: linear-gradient(to right, #e1f5fe, #b3e5fc);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quality-info i {
+            color: #0288d1;
+            font-size: 1.2rem;
+        }
+        
+        .custom-fields-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        .custom-fields-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .custom-field {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .custom-field input {
+            flex: 1;
+        }
+        
+        .remove-field {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .add-field-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .custom-field-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .custom-fields-preview {
+            margin-top: 10px;
+        }
+        
+        .custom-field-item {
+            margin-bottom: 5px;
+            display: flex;
+            font-size: 0.9rem;
+        }
+        
+        .custom-field-label {
+            font-weight: 600;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: right; padding: 10px 20px;">
+        <a href="https://app.scmsarl.site/" style="display: inline-block; padding: 10px 20px; background: #2c3e50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">RETOUR</a>
+    </div>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-hard-hat"></i> SCM SARL - Générateur de Lettres de Licenciement</h1>
+            <p class="subtitle">Créez des lettres de licenciement professionnelles avec champs personnalisés</p>
+        </header>
+        
+        <section class="form-section">
+            <h2 class="section-title"><i class="fas fa-edit"></i> Informations de la lettre</h2>
+            
+            <div id="notification" class="notification"></div>
+            
+            <div class="form-group">
+                <label for="logo" class="required">Logo de l'entreprise</label>
+                <div class="logo-upload" id="logo-upload">
+                    <span><i class="fas fa-upload"></i> Cliquez pour importer votre logo</span>
+                    <input type="file" id="logo" accept="image/*" style="display: none;">
+                    <img id="logo-preview" class="logo-preview" alt="Aperçu du logo">
+                </div>
+                <p class="info-text">Formats acceptés: JPG, PNG. Taille recommandée: 300x100px</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="company-name" class="required">Nom de l'entreprise</label>
+                <input type="text" id="company-name" value="SCM SARL" placeholder="SCM SARL">
+            </div>
+            
+            <div class="form-group">
+                <label for="company-address" class="required">Adresse de l'entreprise</label>
+                <input type="text" id="company-address" placeholder="123 Rue de la Construction">
+            </div>
+            
+            <div class="form-group">
+                <label for="company-city" class="required">Ville et Code Postal</label>
+                <input type="text" id="company-city" placeholder="75000 Paris">
+            </div>
+            
+            <!-- Champs personnalisés pour l'entreprise -->
+            <div class="custom-field-section">
+                <div class="custom-fields-header">
+                    <h3><i class="fas fa-building"></i> Informations supplémentaires - Entreprise</h3>
+                    <button id="add-company-field" class="add-field-btn">
+                        <i class="fas fa-plus"></i> Ajouter un champ
+                    </button>
+                </div>
+                <div id="company-custom-fields" class="custom-fields-container">
+                    <!-- Les champs personnalisés seront ajoutés ici -->
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="employee-name" class="required">Nom du salarié</label>
+                <input type="text" id="employee-name" placeholder="Nom et prénom">
+            </div>
+            
+            <div class="form-group">
+                <label for="employee-address" class="required">Adresse du salarié</label>
+                <input type="text" id="employee-address" placeholder="Adresse complète">
+            </div>
+            
+            <div class="form-group">
+                <label for="employee-position" class="required">Poste occupé</label>
+                <input type="text" id="employee-position" placeholder="Charpentier, Maçon, etc.">
+            </div>
+            
+            <!-- Champs personnalisés pour l'employé -->
+            <div class="custom-field-section">
+                <div class="custom-fields-header">
+                    <h3><i class="fas fa-user"></i> Informations supplémentaires - Employé</h3>
+                    <button id="add-employee-field" class="add-field-btn">
+                        <i class="fas fa-plus"></i> Ajouter un champ
+                    </button>
+                </div>
+                <div id="employee-custom-fields" class="custom-fields-container">
+                    <!-- Les champs personnalisés seront ajoutés ici -->
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="hire-date" class="required">Date d'embauche</label>
+                <input type="date" id="hire-date">
+            </div>
+            
+            <div class="form-group">
+                <label for="notice-period" class="required">Délai de préavis</label>
+                <select id="notice-period">
+                    <option value="15">15 jours</option>
+                    <option value="30" selected>1 mois</option>
+                    <option value="60">2 mois</option>
+                    <option value="90">3 mois</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="termination-reason" class="required">Motif du licenciement</label>
+                <textarea id="termination-reason" placeholder="Décrivez le motif du licenciement..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="additional-info">Informations complémentaires</label>
+                <textarea id="additional-info" placeholder="Indemnités, détails supplémentaires..."></textarea>
+            </div>
+            
+            <div class="buttons">
+                <button id="generate-pdf" class="btn btn-primary">
+                    <i class="fas fa-file-pdf"></i> Télécharger le PDF
+                </button>
+                <button id="reset-form" class="btn btn-danger">
+                    <i class="fas fa-redo"></i> Réinitialiser
+                </button>
+            </div>
+            
+            <div class="quality-info">
+                <i class="fas fa-check-circle"></i>
+                <div>Le PDF généré correspond exactement à l'aperçu à l'écran, avec une qualité optimale.</div>
+            </div>
+        </section>
+        
+        <section class="preview-section">
+            <h2 class="section-title"><i class="fas fa-eye"></i> Aperçu de la lettre</h2>
+            
+            <div class="preview-info">
+                <i class="fas fa-info-circle"></i>
+                <div>L'aperçu correspond exactement au PDF qui sera généré</div>
+            </div>
+            
+            <div class="letter-preview" id="letter-preview">
+                <div class="a4-indicator">Format A4</div>
+                <div class="letter-header">
+                    <div id="logo-container">
+                        <div class="logo-placeholder">Votre logo apparaîtra ici</div>
+                    </div>
+                    <div class="company-info">
+                        <div class="company-info-line" id="preview-company-name">SCM SARL</div>
+                        <div class="company-info-line" id="preview-company-address">123 Rue de la Construction</div>
+                        <div class="company-info-line" id="preview-company-city">75000 Paris</div>
+                        <!-- Aperçu des champs personnalisés entreprise -->
+                        <div id="preview-company-custom" class="custom-fields-preview"></div>
+                    </div>
+                </div>
+                
+                <div class="date" id="preview-date">Paris, le [Date]</div>
+                
+                <div class="recipient-info">
+                    <div class="recipient-info-line" id="preview-employee-name">M. Jean Dupont</div>
+                    <div class="recipient-info-line" id="preview-employee-address">45 Avenue des Chantiers</div>
+                    <div class="recipient-info-line" id="preview-employee-city">75000 Paris</div>
+                    <!-- Aperçu des champs personnalisés employé -->
+                    <div id="preview-employee-custom" class="custom-fields-preview"></div>
+                </div>
+                
+                <div class="letter-content">
+                    <p><strong>Objet : Notification de licenciement</strong></p>
+                    <br>
+                    <p>Madame, Monsieur,</p>
+                    <br>
+                    <p>Par la présente lettre, la société <span id="preview-company-name2">SCM SARL</span> vous informe de sa décision de mettre fin à votre contrat de travail en tant que <span id="preview-employee-position">Charpentier</span>, conformément aux dispositions légales en vigueur.</p>
+                    <br>
+                    <p>Vous avez été embauché(e) dans notre entreprise le <span id="preview-hire-date">01/01/2020</span>.</p>
+                    <br>
+                    <p>Le motif de cette décision est le suivant :</p>
+                    <p id="preview-termination-reason">[Motif du licenciement]</p>
+                    <br>
+                    <p>Conformément à votre contrat de travail et à la législation du travail, votre préavis débutera à compter de la réception de cette lettre et prendra fin après <span id="preview-notice-period">1 mois</span>.</p>
+                    <br>
+                    <p><span id="preview-additional-info">[Informations complémentaires]</span></p>
+                    <br>
+                    <p>Nous vous remercions pour les services rendus à notre entreprise et vous souhaitons le meilleur pour la suite de votre carrière professionnelle.</p>
+                    <br>
+                    <p>Nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
+                </div>
+                
+                <div class="letter-footer">
+                    <div class="signature-area">
+                        <div class="signature-line"></div>
+                        <div class="signature-text">Le Directeur, SCM SARL</div>
+                    </div>
+                    <div id="preview-termination-date">Date de fin de contrat: [Date]</div>
+                </div>
+                
+                <div class="page-counter">Page 1/1</div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>SCM SARL - Générateur de Lettres de Licenciement © 2023 | Tous droits réservés</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialisation des dates
+        document.addEventListener('DOMContentLoaded', function() {
+            // Définir la date d'aujourd'hui par défaut
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('hire-date').value = formattedDate;
+            
+            // Mettre à jour la date dans l'aperçu
+            updateDatePreview();
+            
+            // Pré-remplir avec des données d'exemple
+            prefillExampleData();
+            
+            // Ajouter des écouteurs pour les champs personnalisés
+            document.getElementById('add-company-field').addEventListener('click', addCompanyField);
+            document.getElementById('add-employee-field').addEventListener('click', addEmployeeField);
+        });
+
+        // Ajouter un champ personnalisé pour l'entreprise
+        function addCompanyField() {
+            const container = document.getElementById('company-custom-fields');
+            const fieldId = 'company-custom-' + Date.now();
+            
+            const fieldHTML = `
+                <div class="custom-field" id="${fieldId}">
+                    <input type="text" placeholder="Nom du champ (ex: Téléphone)" class="custom-field-name">
+                    <input type="text" placeholder="Valeur">
+                    <button class="remove-field" onclick="removeField('${fieldId}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', fieldHTML);
+            updatePreview();
+        }
+
+        // Ajouter un champ personnalisé pour l'employé
+        function addEmployeeField() {
+            const container = document.getElementById('employee-custom-fields');
+            const fieldId = 'employee-custom-' + Date.now();
+            
+            const fieldHTML = `
+                <div class="custom-field" id="${fieldId}">
+                    <input type="text" placeholder="Nom du champ (ex: Matricule)" class="custom-field-name">
+                    <input type="text" placeholder="Valeur">
+                    <button class="remove-field" onclick="removeField('${fieldId}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', fieldHTML);
+            updatePreview();
+        }
+
+        // Supprimer un champ personnalisé
+        function removeField(id) {
+            const field = document.getElementById(id);
+            if (field) {
+                field.remove();
+                updatePreview();
+            }
+        }
+
+        // Pré-remplir avec des données d'exemple
+        function prefillExampleData() {
+            document.getElementById('company-address').value = "123 Rue de la Construction";
+            document.getElementById('company-city').value = "75000 Paris";
+            document.getElementById('employee-name').value = "Jean Dupont";
+            document.getElementById('employee-address').value = "45 Avenue des Chantiers";
+            document.getElementById('employee-position').value = "Charpentier";
+            document.getElementById('termination-reason').value = "Restructuration de l'entreprise suite à une diminution des commandes dans le secteur de la construction.";
+            document.getElementById('additional-info').value = "Vous bénéficierez d'une indemnité de licenciement calculée conformément à la convention collective du bâtiment. Un rendez-vous est prévu avec le service RH pour discuter des détails.";
+            
+            // Ajouter des champs personnalisés d'exemple
+            addExampleCustomFields();
+            
+            updatePreview();
+        }
+
+        // Ajouter des champs personnalisés d'exemple
+        function addExampleCustomFields() {
+            // Champs pour l'entreprise
+            const companyContainer = document.getElementById('company-custom-fields');
+            companyContainer.innerHTML = `
+                <div class="custom-field" id="company-custom-1">
+                    <input type="text" placeholder="Nom du champ" class="custom-field-name" value="SIRET">
+                    <input type="text" placeholder="Valeur" value="123 456 789 00012">
+                    <button class="remove-field" onclick="removeField('company-custom-1')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="custom-field" id="company-custom-2">
+                    <input type="text" placeholder="Nom du champ" class="custom-field-name" value="Téléphone">
+                    <input type="text" placeholder="Valeur" value="01 23 45 67 89">
+                    <button class="remove-field" onclick="removeField('company-custom-2')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Champs pour l'employé
+            const employeeContainer = document.getElementById('employee-custom-fields');
+            employeeContainer.innerHTML = `
+                <div class="custom-field" id="employee-custom-1">
+                    <input type="text" placeholder="Nom du champ" class="custom-field-name" value="Matricule">
+                    <input type="text" placeholder="Valeur" value="EMP-2023-456">
+                    <button class="remove-field" onclick="removeField('employee-custom-1')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="custom-field" id="employee-custom-2">
+                    <input type="text" placeholder="Nom du champ" class="custom-field-name" value="Contrat">
+                    <input type="text" placeholder="Valeur" value="CDI">
+                    <button class="remove-field" onclick="removeField('employee-custom-2')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        // Gestion de l'import du logo
+        document.getElementById('logo-upload').addEventListener('click', function() {
+            document.getElementById('logo').click();
+        });
+
+        document.getElementById('logo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const logoPreview = document.getElementById('logo-preview');
+                    logoPreview.src = event.target.result;
+                    logoPreview.style.display = 'block';
+                    
+                    // Mettre à jour l'aperçu de la lettre
+                    const logoContainer = document.getElementById('logo-container');
+                    logoContainer.innerHTML = `<img src="${event.target.result}" class="company-logo" alt="Logo SCM SARL">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Écouteurs pour la mise à jour en temps réel de l'aperçu
+        const formInputs = [
+            'company-name', 'company-address', 'company-city', 
+            'employee-name', 'employee-address', 'employee-position',
+            'hire-date', 'termination-reason', 'additional-info', 'notice-period'
+        ];
+
+        formInputs.forEach(inputId => {
+            document.getElementById(inputId).addEventListener('input', updatePreview);
+        });
+
+        // Ajouter des écouteurs pour les champs personnalisés
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('custom-field-name') || 
+                (e.target.parentElement.classList.contains('custom-field') && 
+                 e.target.tagName === 'INPUT')) {
+                updatePreview();
+            }
+        });
+
+        // Mise à jour de l'aperçu
+        function updatePreview() {
+            // Informations de l'entreprise
+            document.getElementById('preview-company-name').textContent = 
+                document.getElementById('company-name').value || 'SCM SARL';
+            document.getElementById('preview-company-name2').textContent = 
+                document.getElementById('company-name').value || 'SCM SARL';
+            document.getElementById('preview-company-address').textContent = 
+                document.getElementById('company-address').value || '[Adresse de l\'entreprise]';
+            document.getElementById('preview-company-city').textContent = 
+                document.getElementById('company-city').value || '[Ville et code postal]';
+            
+            // Mise à jour des champs personnalisés de l'entreprise
+            const companyCustomPreview = document.getElementById('preview-company-custom');
+            companyCustomPreview.innerHTML = '';
+            
+            document.querySelectorAll('#company-custom-fields .custom-field').forEach(field => {
+                const name = field.querySelector('.custom-field-name').value;
+                const value = field.querySelector('input:not(.custom-field-name)').value;
+                
+                if (name && value) {
+                    const fieldElement = document.createElement('div');
+                    fieldElement.className = 'custom-field-item';
+                    fieldElement.innerHTML = `<span class="custom-field-label">${name}:</span> ${value}`;
+                    companyCustomPreview.appendChild(fieldElement);
+                }
+            });
+            
+            // Informations du salarié
+            document.getElementById('preview-employee-name').textContent = 
+                document.getElementById('employee-name').value || '[Nom du salarié]';
+            document.getElementById('preview-employee-address').textContent = 
+                document.getElementById('employee-address').value || '[Adresse du salarié]';
+            
+            // Mise à jour des champs personnalisés de l'employé
+            const employeeCustomPreview = document.getElementById('preview-employee-custom');
+            employeeCustomPreview.innerHTML = '';
+            
+            document.querySelectorAll('#employee-custom-fields .custom-field').forEach(field => {
+                const name = field.querySelector('.custom-field-name').value;
+                const value = field.querySelector('input:not(.custom-field-name)').value;
+                
+                if (name && value) {
+                    const fieldElement = document.createElement('div');
+                    fieldElement.className = 'custom-field-item';
+                    fieldElement.innerHTML = `<span class="custom-field-label">${name}:</span> ${value}`;
+                    employeeCustomPreview.appendChild(fieldElement);
+                }
+            });
+            
+            // Poste et dates
+            document.getElementById('preview-employee-position').textContent = 
+                document.getElementById('employee-position').value || '[Poste occupé]';
+            
+            const hireDate = document.getElementById('hire-date').value;
+            if (hireDate) {
+                const formattedHireDate = formatDate(hireDate);
+                document.getElementById('preview-hire-date').textContent = formattedHireDate;
+            }
+            
+            // Motif du licenciement
+            document.getElementById('preview-termination-reason').textContent = 
+                document.getElementById('termination-reason').value || '[Motif du licenciement]';
+            
+            // Informations complémentaires
+            const additionalInfo = document.getElementById('additional-info').value;
+            document.getElementById('preview-additional-info').textContent = 
+                additionalInfo ? additionalInfo : '[Informations complémentaires]';
+            
+            // Délai de préavis
+            const noticePeriod = document.getElementById('notice-period').value;
+            document.getElementById('preview-notice-period').textContent = 
+                getNoticePeriodText(noticePeriod);
+            
+            // Calcul de la date de fin de contrat
+            updateTerminationDate();
+            
+            // Mise à jour de la date
+            updateDatePreview();
+        }
+
+        // Mise à jour de la date dans l'aperçu
+        function updateDatePreview() {
+            const today = new Date();
+            const formattedDate = formatDate(today);
+            document.getElementById('preview-date').textContent = 
+                `${document.getElementById('company-city').value.split(',')[0] || 'Paris'}, le ${formattedDate}`;
+        }
+
+        // Calcul de la date de fin de contrat
+        function updateTerminationDate() {
+            const noticePeriod = parseInt(document.getElementById('notice-period').value);
+            const terminationDate = new Date();
+            terminationDate.setDate(terminationDate.getDate() + noticePeriod);
+            
+            document.getElementById('preview-termination-date').textContent = 
+                `Date de fin de contrat: ${formatDate(terminationDate)}`;
+        }
+
+        // Formater la date au format français
+        function formatDate(dateInput) {
+            let date;
+            if (typeof dateInput === 'string') {
+                date = new Date(dateInput);
+            } else {
+                date = dateInput;
+            }
+            
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            
+            return `${day}/${month}/${year}`;
+        }
+
+        // Obtenir le texte du délai de préavis
+        function getNoticePeriodText(days) {
+            days = parseInt(days);
+            if (days === 15) return '15 jours';
+            if (days === 30) return '1 mois';
+            if (days === 60) return '2 mois';
+            if (days === 90) return '3 mois';
+            return `${days} jours`;
+        }
+
+        // Réinitialiser le formulaire
+        document.getElementById('reset-form').addEventListener('click', function() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser le formulaire? Toutes les données seront perdues.')) {
+                document.getElementById('company-name').value = 'SCM SARL';
+                document.getElementById('company-address').value = '';
+                document.getElementById('company-city').value = '';
+                document.getElementById('employee-name').value = '';
+                document.getElementById('employee-address').value = '';
+                document.getElementById('employee-position').value = '';
+                
+                const today = new Date();
+                document.getElementById('hire-date').value = today.toISOString().split('T')[0];
+                
+                document.getElementById('notice-period').value = '30';
+                document.getElementById('termination-reason').value = '';
+                document.getElementById('additional-info').value = '';
+                
+                document.getElementById('logo-preview').style.display = 'none';
+                document.getElementById('logo-preview').src = '';
+                document.getElementById('logo-container').innerHTML = 
+                    '<div class="logo-placeholder">Votre logo apparaîtra ici</div>';
+                
+                document.getElementById('logo').value = '';
+                
+                // Réinitialiser les champs personnalisés
+                document.getElementById('company-custom-fields').innerHTML = '';
+                document.getElementById('employee-custom-fields').innerHTML = '';
+                
+                updatePreview();
+                
+                showNotification('Formulaire réinitialisé avec succès', 'success');
+            }
+        });
+
+        // Générer le PDF avec une meilleure qualité
+        document.getElementById('generate-pdf').addEventListener('click', function() {
+            // Vérifier les champs requis
+            const requiredFields = [
+                'company-name', 'company-address', 'company-city',
+                'employee-name', 'employee-address', 'employee-position',
+                'hire-date', 'termination-reason'
+            ];
+            
+            let missingFields = [];
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    missingFields.push(field.previousElementSibling.textContent.replace(' *', ''));
+                    field.style.borderColor = 'red';
+                } else {
+                    field.style.borderColor = '';
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                showNotification(`Veuillez remplir les champs obligatoires: ${missingFields.join(', ')}`, 'error');
+                return;
+            }
+            
+            // Afficher notification de génération
+            showNotification('Génération du PDF en cours...', 'success');
+            
+            // Utiliser jsPDF pour créer le PDF directement
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Dimensions de la page A4
+            const pageWidth = 210;
+            const pageHeight = 297;
+            
+            // Marges
+            const marginLeft = 25;
+            const marginRight = 25;
+            const marginTop = 25;
+            const marginBottom = 25;
+            
+            // Position actuelle dans le PDF
+            let yPosition = marginTop;
+            
+            // Ajouter le logo si présent
+            const logo = document.querySelector('#logo-container img');
+            let logoHeight = 0;
+            if (logo && logo.src) {
+                const logoWidth = 40;
+                logoHeight = (logo.naturalHeight * logoWidth) / logo.naturalWidth;
+                pdf.addImage(logo.src, 'PNG', marginLeft, yPosition, logoWidth, logoHeight);
+            }
+            
+            // Position pour les informations de l'entreprise
+            let companyInfoY = yPosition;
+            
+            // Ajouter les informations de l'entreprise à droite
+            const companyName = document.getElementById('preview-company-name').textContent;
+            const companyAddress = document.getElementById('preview-company-address').textContent;
+            const companyCity = document.getElementById('preview-company-city').textContent;
+            
+            pdf.setFontSize(11);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(companyName, pageWidth - marginRight, companyInfoY, { align: 'right' });
+            pdf.text(companyAddress, pageWidth - marginRight, companyInfoY + 5, { align: 'right' });
+            pdf.text(companyCity, pageWidth - marginRight, companyInfoY + 10, { align: 'right' });
+            
+            // Ajouter les champs personnalisés de l'entreprise
+            let customY = companyInfoY + 15;
+            document.querySelectorAll('#preview-company-custom .custom-field-item').forEach(field => {
+                const text = field.textContent;
+                pdf.text(text, pageWidth - marginRight, customY, { align: 'right' });
+                customY += 5;
+            });
+            
+            // Calculer la position verticale après le logo ou les infos de l'entreprise
+            const logoBottom = yPosition + logoHeight;
+            const companyInfoBottom = customY;
+            yPosition = Math.max(logoBottom, companyInfoBottom) + 15;
+            
+            // Ajouter la date
+            const dateText = document.getElementById('preview-date').textContent;
+            pdf.setFontSize(12);
+            pdf.text(dateText, marginLeft, yPosition);
+            yPosition += 20;
+            
+            // Ajouter les informations du destinataire
+            const employeeName = document.getElementById('preview-employee-name').textContent;
+            const employeeAddress = document.getElementById('preview-employee-address').textContent;
+            const employeeCity = document.getElementById('preview-employee-city').textContent || '';
+            
+            pdf.text(employeeName, marginLeft, yPosition);
+            pdf.text(employeeAddress, marginLeft, yPosition + 5);
+            if (employeeCity) pdf.text(employeeCity, marginLeft, yPosition + 10);
+            
+            // Ajouter les champs personnalisés de l'employé
+            let employeeCustomY = yPosition + 15;
+            document.querySelectorAll('#preview-employee-custom .custom-field-item').forEach((field, index) => {
+                const text = field.textContent;
+                pdf.text(text, marginLeft, employeeCustomY + (index * 5));
+            });
+            
+            yPosition = employeeCustomY + 25;
+            
+            // Objet de la lettre
+            pdf.setFontSize(14);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Objet : Notification de licenciement', marginLeft, yPosition);
+            yPosition += 15;
+            
+            // Contenu de la lettre
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'normal');
+            
+            const contentLines = [
+                "Madame, Monsieur,",
+                "",
+                `Par la présente lettre, la société ${companyName} vous informe de sa décision de mettre fin à votre contrat de travail en tant que ${document.getElementById('preview-employee-position').textContent}, conformément aux dispositions légales en vigueur.`,
+                "",
+                `Vous avez été embauché(e) dans notre entreprise le ${document.getElementById('preview-hire-date').textContent}.`,
+                "",
+                "Le motif de cette décision est le suivant :",
+                document.getElementById('preview-termination-reason').textContent,
+                "",
+                `Conformément à votre contrat de travail et à la législation du travail, votre préavis débutera à compter de la réception de cette lettre et prendra fin après ${document.getElementById('preview-notice-period').textContent}.`,
+                "",
+                document.getElementById('preview-additional-info').textContent,
+                "",
+                "Nous vous remercions pour les services rendus à notre entreprise et vous souhaitons le meilleur pour la suite de votre carrière professionnelle.",
+                "",
+                "Nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées."
+            ];
+            
+            contentLines.forEach(line => {
+                if (yPosition > pageHeight - marginBottom) {
+                    pdf.addPage();
+                    yPosition = marginTop;
+                }
+                
+                const lines = pdf.splitTextToSize(line, pageWidth - marginLeft - marginRight);
+                lines.forEach(l => {
+                    if (yPosition > pageHeight - marginBottom) {
+                        pdf.addPage();
+                        yPosition = marginTop;
+                    }
+                    pdf.text(l, marginLeft, yPosition);
+                    yPosition += 7;
+                });
+                yPosition += 3; // Espace supplémentaire entre les paragraphes
+            });
+            
+            // Pied de page avec signature
+            yPosition = pageHeight - marginBottom - 30;
+            pdf.setLineWidth(0.5);
+            pdf.line(marginLeft, yPosition, marginLeft + 60, yPosition);
+            pdf.setFontSize(10);
+            pdf.text('Le Directeur, SCM SARL', marginLeft, yPosition + 5);
+            
+            const terminationDate = document.getElementById('preview-termination-date').textContent;
+            pdf.text(terminationDate, pageWidth - marginRight, yPosition, { align: 'right' });
+            
+            // Nom du fichier
+            const employeeNameForFile = document.getElementById('employee-name').value || 'salarie';
+            const formattedName = employeeNameForFile.replace(/\s+/g, '_').toLowerCase();
+            const date = new Date();
+            const dateStr = `${date.getDate()}${date.getMonth()+1}${date.getFullYear()}`;
+            
+            pdf.save(`SCM_SARL_Licenciement_${formattedName}_${dateStr}.pdf`);
+            
+            showNotification('PDF généré avec succès!', 'success');
+        });
+
+        // Afficher les notifications
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification';
+            notification.classList.add(`notification-${type}`);
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialiser l'aperçu
+        updatePreview();
+    </script>
+</body>
+</html>

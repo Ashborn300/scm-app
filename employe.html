@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM Gestion - Gestion des Employés</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-pic-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #3b82f6;
+            background-color: #f3f4f6;
+        }
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-pic-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+        .upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .custom-field-input {
+            transition: all 0.3s ease;
+        }
+        .custom-field-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .employee-card {
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .employee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .employee-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #3b82f6;
+            margin-right: 1.5rem;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-section {
+                display: block !important;
+            }
+        }
+        .print-section {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6">
+            <a href="https://app.scmsarl.site/" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> RETOUR
+            </a>
+        </div>
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-blue-600 mb-2">SCM Gestion</h1>
+            <p class="text-gray-600">Système de gestion des employés et chantiers</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Employee Form Section -->
+            <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Ajouter un Employé</h2>
+                
+                <!-- Profile Picture Upload -->
+                <div class="mb-6">
+                    <div class="profile-pic-container mb-3">
+                        <div class="profile-pic-placeholder" id="profilePicPlaceholder">
+                            <i class="fas fa-user text-4xl"></i>
+                        </div>
+                        <img id="profilePicPreview" class="profile-pic hidden" src="" alt="Photo de profil">
+                        <div class="upload-btn" title="Changer la photo">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" id="profilePicInput" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                    <div class="text-center space-x-2">
+                        <button id="removePhotoBtn" class="text-sm text-red-500 hover:text-red-700 hidden">
+                            <i class="fas fa-times mr-1"></i> Supprimer
+                        </button>
+                        <button id="importPhotoBtn" class="text-sm text-blue-500 hover:text-blue-700">
+                            <i class="fas fa-upload mr-1"></i> Importer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Employee Form -->
+                <form id="employeeForm" class="space-y-4">
+                    <div>
+                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                        <input type="text" id="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                        <input type="text" id="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="matricule" class="block text-sm font-medium text-gray-700 mb-1">Numéro Matricule</label>
+                        <input type="text" id="matricule" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-1">Numéro de Carte</label>
+                        <input type="text" id="cardNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="personalEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Personnel</label>
+                        <input type="email" id="personalEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="professionalEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Professionnel</label>
+                        <input type="email" id="professionalEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                        <textarea id="address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="constructionSite" class="block text-sm font-medium text-gray-700 mb-1">Chantier Assigné</label>
+                        <input type="text" id="constructionSite" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Numéro de Téléphone</label>
+                        <input type="tel" id="phoneNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <!-- Custom Fields Section -->
+                    <div id="customFieldsContainer" class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-medium text-gray-700">Champs Personnalisés</h3>
+                            <button type="button" id="addCustomFieldBtn" class="text-blue-500 hover:text-blue-700 text-sm">
+                                <i class="fas fa-plus mr-1"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            <i class="fas fa-save mr-2"></i> Enregistrer l'Employé
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Employee List Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4 sm:mb-0">Liste des Employés</h2>
+                        <div class="flex space-x-2">
+                            <input type="text" id="searchInput" placeholder="Rechercher..." class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button id="exportAllBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                                <i class="fas fa-file-pdf mr-2"></i> Exporter Tout
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom & Prénom</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chantier</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTableBody" class="bg-gray-50">
+                                <!-- Employees will be added here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="noEmployeesMessage" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-users text-4xl mb-2"></i>
+                        <p>Aucun employé enregistré pour le moment</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Section (hidden until export) -->
+    <div id="printSection" class="print-section"></div>
+
+    <!-- Employee Details Modal -->
+    <div id="employeeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Détails de l'Employé</h3>
+                    <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="modalContent" class="space-y-4">
+                    <!-- Content will be filled dynamically -->
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="exportPdfBtn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                        <i class="fas fa-file-pdf mr-2"></i> Exporter en PDF
+                    </button>
+                    <button id="closeModalBtn2" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Employee data array
+        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+        let currentEmployeeId = null;
+        let profilePicBase64 = null;
+        
+        // DOM Elements
+        const employeeForm = document.getElementById('employeeForm');
+        const profilePicInput = document.getElementById('profilePicInput');
+        const profilePicPreview = document.getElementById('profilePicPreview');
+        const profilePicPlaceholder = document.getElementById('profilePicPlaceholder');
+        const removePhotoBtn = document.getElementById('removePhotoBtn');
+        const employeeTableBody = document.getElementById('employeeTableBody');
+        const noEmployeesMessage = document.getElementById('noEmployeesMessage');
+        const searchInput = document.getElementById('searchInput');
+        const employeeModal = document.getElementById('employeeModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBtn2 = document.getElementById('closeModalBtn2');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const exportAllBtn = document.getElementById('exportAllBtn');
+        const printSection = document.getElementById('printSection');
+        const addCustomFieldBtn = document.getElementById('addCustomFieldBtn');
+        const customFieldsContainer = document.getElementById('customFieldsContainer');
+        const importPhotoBtn = document.getElementById('importPhotoBtn');
+        
+        // Event Listeners
+        importPhotoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            profilePicInput.click();
+        });
+        document.addEventListener('DOMContentLoaded', renderEmployeeList);
+        employeeForm.addEventListener('submit', handleFormSubmit);
+        profilePicInput.addEventListener('change', handleProfilePicUpload);
+        removePhotoBtn.addEventListener('click', removeProfilePic);
+        searchInput.addEventListener('input', handleSearch);
+        closeModalBtn.addEventListener('click', closeModal);
+        closeModalBtn2.addEventListener('click', closeModal);
+        exportPdfBtn.addEventListener('click', exportEmployeeToPdf);
+        exportAllBtn.addEventListener('click', exportAllEmployeesToPdf);
+        addCustomFieldBtn.addEventListener('click', addCustomField);
+        
+        // Functions
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id: currentEmployeeId || Date.now().toString(),
+                lastName: document.getElementById('lastName').value,
+                firstName: document.getElementById('firstName').value,
+                matricule: document.getElementById('matricule').value,
+                cardNumber: document.getElementById('cardNumber').value,
+                personalEmail: document.getElementById('personalEmail').value,
+                professionalEmail: document.getElementById('professionalEmail').value,
+                address: document.getElementById('address').value,
+                constructionSite: document.getElementById('constructionSite').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                profilePic: profilePicBase64,
+                customFields: getCustomFieldsData(),
+                createdAt: currentEmployeeId ? employees.find(e => e.id === currentEmployeeId).createdAt : new Date().toISOString()
+            };
+            
+            if (currentEmployeeId) {
+                // Update existing employee
+                const index = employees.findIndex(e => e.id === currentEmployeeId);
+                employees[index] = formData;
+            } else {
+                // Add new employee
+                employees.push(formData);
+            }
+            
+            saveEmployees();
+            resetForm();
+            renderEmployeeList();
+            
+            // Show success message
+            alert(`Employé ${currentEmployeeId ? 'modifié' : 'ajouté'} avec succès!`);
+            currentEmployeeId = null;
+        }
+        
+        function getCustomFieldsData() {
+            const customFields = [];
+            const customFieldElements = document.querySelectorAll('.custom-field');
+            
+            customFieldElements.forEach(field => {
+                const name = field.querySelector('.custom-field-name').value;
+                const value = field.querySelector('.custom-field-value').value;
+                
+                if (name && value) {
+                    customFields.push({ name, value });
+                }
+            });
+            
+            return customFields;
+        }
+        
+        function addCustomField() {
+            const fieldId = Date.now();
+            const fieldHTML = `
+                <div class="custom-field flex items-center space-x-2">
+                    <input type="text" placeholder="Nom du champ" class="custom-field-name flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" placeholder="Valeur" class="custom-field-value flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="button" class="remove-custom-field text-red-500 hover:text-red-700 p-2" data-id="${fieldId}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            const div = document.createElement('div');
+            div.innerHTML = fieldHTML;
+            customFieldsContainer.appendChild(div);
+            
+            // Add event listener to the remove button
+            div.querySelector('.remove-custom-field').addEventListener('click', function() {
+                div.remove();
+            });
+        }
+        
+        function handleProfilePicUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                profilePicBase64 = event.target.result;
+                profilePicPreview.src = profilePicBase64;
+                profilePicPreview.classList.remove('hidden');
+                profilePicPlaceholder.classList.add('hidden');
+                removePhotoBtn.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function removeProfilePic() {
+            profilePicBase64 = null;
+            profilePicPreview.src = '';
+            profilePicPreview.classList.add('hidden');
+            profilePicPlaceholder.classList.remove('hidden');
+            removePhotoBtn.classList.add('hidden');
+            profilePicInput.value = '';
+        }
+        
+        function saveEmployees() {
+            localStorage.setItem('employees', JSON.stringify(employees));
+        }
+        
+        function resetForm() {
+            employeeForm.reset();
+            removeProfilePic();
+            currentEmployeeId = null;
+            customFieldsContainer.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-medium text-gray-700">Champs Personnalisés</h3>
+                    <button type="button" id="addCustomFieldBtn" class="text-blue-500 hover:text-blue-700 text-sm">
+                        <i class="fas fa-plus mr-1"></i> Ajouter
+                    </button>
+                </div>
+            `;
+            // Re-add event listener for the button
+            document.getElementById('addCustomFieldBtn').addEventListener('click', addCustomField);
+        }
+        
+        function renderEmployeeList(filteredEmployees = null) {
+            const employeesToRender = filteredEmployees || employees;
+            
+            if (employeesToRender.length === 0) {
+                employeeTableBody.innerHTML = '';
+                noEmployeesMessage.classList.remove('hidden');
+                return;
+            }
+            
+            noEmployeesMessage.classList.add('hidden');
+            employeeTableBody.innerHTML = '';
+            
+            employeesToRender.forEach(employee => {
+                const row = document.createElement('tr');
+                row.className = 'employee-card hover:bg-gray-50 cursor-pointer';
+                row.dataset.id = employee.id;
+                
+                row.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            ${employee.profilePic ? 
+                                `<img src="${employee.profilePic}" alt="Photo de profil" class="employee-photo">` : 
+                                `<div class="employee-photo bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-500 text-3xl"></i>
+                                </div>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">${employee.lastName} ${employee.firstName}</h3>
+                                    <p class="text-sm text-gray-500">Matricule: ${employee.matricule}</p>
+                                    <p class="text-sm text-gray-500">Chantier: ${employee.constructionSite || 'Non assigné'}</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-900 edit-btn" data-id="${employee.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${employee.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                                <div><span class="text-gray-500">Email:</span> ${employee.professionalEmail || 'Non renseigné'}</div>
+                                <div><span class="text-gray-500">Téléphone:</span> ${employee.phoneNumber || 'Non renseigné'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                employeeTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to all employee rows and buttons
+            document.querySelectorAll('.employee-card').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('edit-btn') && !e.target.classList.contains('delete-btn') && 
+                        !e.target.closest('.edit-btn') && !e.target.closest('.delete-btn')) {
+                        showEmployeeDetails(row.dataset.id);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editEmployee(btn.dataset.id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteEmployee(btn.dataset.id);
+                });
+            });
+        }
+        
+        function showEmployeeDetails(id) {
+            const employee = employees.find(e => e.id === id);
+            if (!employee) return;
+            
+            // Format the date
+            const createdAt = new Date(employee.createdAt);
+            const formattedDate = createdAt.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Create modal content
+            let customFieldsHTML = '';
+            if (employee.customFields && employee.customFields.length > 0) {
+                customFieldsHTML = employee.customFields.map(field => `
+                    <div class="flex items-center py-2 border-b border-gray-100">
+                        <div class="w-1/3 font-medium text-gray-700">${field.name}</div>
+                        <div class="w-2/3 text-gray-600">${field.value}</div>
+                    </div>
+                `).join('');
+            }
+            
+            modalContent.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/3">
+                        <div class="flex flex-col items-center">
+                            ${employee.profilePic ? 
+                                `<img src="${employee.profilePic}" alt="Photo de profil" class="h-32 w-32 rounded-full object-cover mb-4 border-2 border-blue-500">` : 
+                                `<div class="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 border-2 border-blue-500">
+                                    <i class="fas fa-user text-gray-500 text-4xl"></i>
+                                </div>`}
+                            <h4 class="text-xl font-semibold text-center">${employee.lastName} ${employee.firstName}</h4>
+                            <p class="text-gray-500 text-center">${employee.matricule}</p>
+                        </div>
+                    </div>
+                    <div class="md:w-2/3 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Nom</h5>
+                                <p class="text-gray-800">${employee.lastName}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Prénom</h5>
+                                <p class="text-gray-800">${employee.firstName}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Matricule</h5>
+                                <p class="text-gray-800">${employee.matricule}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Numéro de Carte</h5>
+                                <p class="text-gray-800">${employee.cardNumber || 'Non renseigné'}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Email Personnel</h5>
+                                <p class="text-gray-800">${employee.personalEmail || 'Non renseigné'}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Email Professionnel</h5>
+                                <p class="text-gray-800">${employee.professionalEmail || 'Non renseigné'}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Téléphone</h5>
+                                <p class="text-gray-800">${employee.phoneNumber || 'Non renseigné'}</p>
+                            </div>
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-500">Chantier Assigné</h5>
+                                <p class="text-gray-800">${employee.constructionSite || 'Non assigné'}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-500">Adresse</h5>
+                            <p class="text-gray-800">${employee.address || 'Non renseignée'}</p>
+                        </div>
+                        
+                        ${customFieldsHTML ? `
+                            <div class="mt-4">
+                                <h5 class="text-sm font-medium text-gray-500 mb-2">Informations Supplémentaires</h5>
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    ${customFieldsHTML}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="text-xs text-gray-400 mt-4">
+                            <p>Enregistré le: ${formattedDate}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            currentEmployeeId = id;
+            employeeModal.classList.remove('hidden');
+        }
+        
+        function closeModal() {
+            employeeModal.classList.add('hidden');
+            currentEmployeeId = null;
+        }
+        
+        function editEmployee(id) {
+            const employee = employees.find(e => e.id === id);
+            if (!employee) return;
+            
+            // Fill the form with employee data
+            document.getElementById('lastName').value = employee.lastName;
+            document.getElementById('firstName').value = employee.firstName;
+            document.getElementById('matricule').value = employee.matricule;
+            document.getElementById('cardNumber').value = employee.cardNumber || '';
+            document.getElementById('personalEmail').value = employee.personalEmail || '';
+            document.getElementById('professionalEmail').value = employee.professionalEmail || '';
+            document.getElementById('address').value = employee.address || '';
+            document.getElementById('constructionSite').value = employee.constructionSite || '';
+            document.getElementById('phoneNumber').value = employee.phoneNumber || '';
+            
+            // Handle profile picture
+            if (employee.profilePic) {
+                profilePicBase64 = employee.profilePic;
+                profilePicPreview.src = profilePicBase64;
+                profilePicPreview.classList.remove('hidden');
+                profilePicPlaceholder.classList.add('hidden');
+                removePhotoBtn.classList.remove('hidden');
+            } else {
+                removeProfilePic();
+            }
+            
+            // Handle custom fields
+            customFieldsContainer.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-medium text-gray-700">Champs Personnalisés</h3>
+                    <button type="button" id="addCustomFieldBtn" class="text-blue-500 hover:text-blue-700 text-sm">
+                        <i class="fas fa-plus mr-1"></i> Ajouter
+                    </button>
+                </div>
+            `;
+            
+            if (employee.customFields && employee.customFields.length > 0) {
+                employee.customFields.forEach(field => {
+                    const fieldHTML = `
+                        <div class="custom-field flex items-center space-x-2">
+                            <input type="text" placeholder="Nom du champ" value="${field.name}" class="custom-field-name flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" placeholder="Valeur" value="${field.value}" class="custom-field-value flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" class="remove-custom-field text-red-500 hover:text-red-700 p-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    const div = document.createElement('div');
+                    div.innerHTML = fieldHTML;
+                    customFieldsContainer.appendChild(div);
+                    
+                    // Add event listener to the remove button
+                    div.querySelector('.remove-custom-field').addEventListener('click', function() {
+                        div.remove();
+                    });
+                });
+            }
+            
+            // Re-add event listener for the button
+            document.getElementById('addCustomFieldBtn').addEventListener('click', addCustomField);
+            
+            currentEmployeeId = id;
+            
+            // Scroll to form
+            document.querySelector('.lg\\:col-span-1').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function deleteEmployee(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+                employees = employees.filter(e => e.id !== id);
+                saveEmployees();
+                renderEmployeeList();
+                
+                if (currentEmployeeId === id) {
+                    resetForm();
+                }
+            }
+        }
+        
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderEmployeeList();
+                return;
+            }
+            
+            const filteredEmployees = employees.filter(employee => {
+                return (
+                    employee.lastName.toLowerCase().includes(searchTerm) ||
+                    employee.firstName.toLowerCase().includes(searchTerm) ||
+                    employee.matricule.toLowerCase().includes(searchTerm) ||
+                    (employee.constructionSite && employee.constructionSite.toLowerCase().includes(searchTerm)) ||
+                    (employee.cardNumber && employee.cardNumber.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            renderEmployeeList(filteredEmployees);
+        }
+        
+        function exportEmployeeToPdf() {
+            if (!currentEmployeeId) return;
+            
+            const employee = employees.find(e => e.id === currentEmployeeId);
+            if (!employee) return;
+            
+            // Create a printable version of the employee details
+            printSection.innerHTML = `
+                <div class="p-8 max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-8 border-b pb-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-blue-600">SCM Gestion</h1>
+                            <p class="text-gray-600">Fiche Employé</p>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <p>Exporté le: ${new Date().toLocaleDateString('fr-FR')}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-8 mb-8">
+                        <div class="md:w-1/3">
+                            <div class="flex flex-col items-center">
+                                ${employee.profilePic ? 
+                                    `<img src="${employee.profilePic}" alt="Photo de profil" class="h-40 w-40 rounded-full object-cover mb-4 border-2 border-blue-500">` : 
+                                    `<div class="h-40 w-40 rounded-full bg-gray-200 flex items-center justify-center mb-4 border-2 border-blue-500">
+                                        <i class="fas fa-user text-gray-500 text-5xl"></i>
+                                    </div>`}
+                                <h4 class="text-xl font-semibold text-center">${employee.lastName} ${employee.firstName}</h4>
+                                <p class="text-gray-500 text-center">${employee.matricule}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="md:w-2/3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Nom</h5>
+                                    <p class="text-gray-800">${employee.lastName}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Prénom</h5>
+                                    <p class="text-gray-800">${employee.firstName}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Matricule</h5>
+                                    <p class="text-gray-800">${employee.matricule}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Numéro de Carte</h5>
+                                    <p class="text-gray-800">${employee.cardNumber || 'Non renseigné'}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Email Personnel</h5>
+                                    <p class="text-gray-800">${employee.personalEmail || 'Non renseigné'}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Email Professionnel</h5>
+                                    <p class="text-gray-800">${employee.professionalEmail || 'Non renseigné'}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Téléphone</h5>
+                                    <p class="text-gray-800">${employee.phoneNumber || 'Non renseigné'}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-gray-500">Chantier Assigné</h5>
+                                    <p class="text-gray-800">${employee.constructionSite || 'Non assigné'}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <h5 class="text-sm font-medium text-gray-500">Adresse</h5>
+                                <p class="text-gray-800">${employee.address || 'Non renseignée'}</p>
+                            </div>
+                            
+                            ${employee.customFields && employee.customFields.length > 0 ? `
+                                <div class="mb-6">
+                                    <h5 class="text-sm font-medium text-gray-500 mb-2">Informations Supplémentaires</h5>
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        ${employee.customFields.map(field => `
+                                            <div class="flex items-center py-2 border-b border-gray-100">
+                                                <div class="w-1/3 font-medium text-gray-700">${field.name}</div>
+                                                <div class="w-2/3 text-gray-600">${field.value || 'Non renseigné'}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-400 border-t pt-4">
+                        <p>Enregistré le: ${new Date(employee.createdAt).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Use html2canvas to capture the print section
+            html2canvas(printSection).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 295; // A4 height in mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                pdf.save(`Fiche_Employe_${employee.lastName}_${employee.firstName}.pdf`);
+            });
+        }
+        
+        function exportAllEmployeesToPdf() {
+            if (employees.length === 0) {
+                alert("Aucun employé à exporter!");
+                return;
+            }
+
+            // Show loading indicator
+            exportAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Préparation...';
+            exportAllBtn.disabled = true;
+
+            // Create PDF
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 40;
+            const lineHeight = 20;
+            let yPos = margin;
+
+            // Add header
+            pdf.setFontSize(18);
+            pdf.setTextColor(40, 53, 147);
+            pdf.text('SCM Gestion - Liste des Employés', margin, yPos);
+            yPos += lineHeight * 1.5;
+
+            pdf.setFontSize(12);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`Exporté le: ${new Date().toLocaleDateString('fr-FR')} - Total: ${employees.length} employé(s)`, margin, yPos);
+            yPos += lineHeight * 1.5;
+
+            // Add table header
+            pdf.setFontSize(12);
+            pdf.setTextColor(0, 0, 0);
+            pdf.setFont(undefined, 'bold');
+            
+            // Table columns
+            const cols = [
+                { header: 'Photo', width: 60 },
+                { header: 'Nom', width: 100 },
+                { header: 'Prénom', width: 100 },
+                { header: 'Matricule', width: 80 },
+                { header: 'Chantier', width: 100 },
+                { header: 'Téléphone', width: 100 }
+            ];
+            
+            // Draw table header
+            let xPos = margin;
+            cols.forEach(col => {
+                pdf.text(col.header, xPos, yPos);
+                xPos += col.width;
+            });
+            yPos += lineHeight;
+
+            // Draw line under header
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 10;
+
+            // Add employees data
+            pdf.setFont(undefined, 'normal');
+            pdf.setFontSize(10);
+
+            employees.forEach((employee, index) => {
+                // Check if we need a new page (leave space for employee block)
+                if (yPos > pageHeight - margin - 150) {
+                    pdf.addPage();
+                    yPos = margin;
+                }
+
+                // Create employee card
+                pdf.setDrawColor(200, 200, 200);
+                pdf.setFillColor(255, 255, 255);
+                pdf.roundedRect(margin, yPos, pageWidth - margin*2, 120, 5, 5, 'FD');
+                
+                // Add photo (if exists)
+                if (employee.profilePic) {
+                    try {
+                        pdf.addImage(employee.profilePic, 'JPEG', margin + 10, yPos + 10, 80, 80);
+                    } catch (e) {
+                        // Fallback if image loading fails
+                        pdf.setFillColor(230, 230, 230);
+                        pdf.circle(margin + 50, yPos + 50, 40, 'F');
+                        pdf.setTextColor(150, 150, 150);
+                        pdf.text('Photo', margin + 50, yPos + 50, { align: 'center' });
+                    }
+                } else {
+                    pdf.setFillColor(230, 230, 230);
+                    pdf.circle(margin + 50, yPos + 50, 40, 'F');
+                    pdf.setTextColor(150, 150, 150);
+                    pdf.text('Photo', margin + 50, yPos + 50, { align: 'center' });
+                }
+
+                // Add employee info
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(12);
+                pdf.text(`${employee.lastName} ${employee.firstName}`, margin + 100, yPos + 20);
+                
+                pdf.setFontSize(10);
+                pdf.text(`Matricule: ${employee.matricule}`, margin + 100, yPos + 35);
+                pdf.text(`Chantier: ${employee.constructionSite || 'Non assigné'}`, margin + 100, yPos + 50);
+                pdf.text(`Email: ${employee.professionalEmail || 'Non renseigné'}`, margin + 100, yPos + 65);
+                pdf.text(`Téléphone: ${employee.phoneNumber || 'Non renseigné'}`, margin + 100, yPos + 80);
+
+                // Add custom fields if they exist
+                if (employee.customFields && employee.customFields.length > 0) {
+                    let customY = yPos + 95;
+                    employee.customFields.forEach(field => {
+                        if (customY > pageHeight - margin - 30) {
+                            pdf.addPage();
+                            customY = margin;
+                            yPos = margin;
+                        }
+                        pdf.text(`${field.name}: ${field.value || 'Non renseigné'}`, margin + 100, customY);
+                        customY += 15;
+                    });
+                    yPos = customY + 10;
+                } else {
+                    yPos += 130;
+                }
+            });
+
+            // Save PDF
+            pdf.save('Liste_Complete_Employes.pdf');
+
+            // Restore button state
+            exportAllBtn.innerHTML = '<i class="fas fa-file-pdf mr-2"></i> Exporter Tout';
+            exportAllBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>
